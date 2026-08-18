@@ -1,0 +1,883 @@
+/* ============================================================
+   HERO — "Healthcare Made Affordable" / "Health Made Optimal"
+   Split blue/green hero with a central membership card.
+   ============================================================ */
+
+.wrap,
+.wrap *,
+.wrap *::before,
+.wrap *::after {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+/* ---------------- animations ---------------- */
+@keyframes fadeUp {
+  from {
+    opacity: 0;
+    transform: translateY(24px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+@keyframes checkPop {
+  0% {
+    transform: scale(0.6);
+    opacity: 0;
+  }
+  60% {
+    transform: scale(1.15);
+    opacity: 1;
+  }
+  100% {
+    transform: scale(1);
+    opacity: 1;
+  }
+}
+@keyframes shine {
+  0% {
+    left: -100%;
+  }
+  50% {
+    left: 130%;
+  }
+  100% {
+    left: 130%;
+  }
+}
+
+/* ---------------- background wrap ---------------- */
+.wrap {
+  /* The split hero was authored against a brighter, higher-saturation variant
+     of the palette than the site-wide Brand Guidelines v2 tokens. Scope those
+     values here so this section renders as designed without pulling the rest
+     of the site off-brand. Delete this block to snap the hero onto the
+     canonical palette. */
+  --blue: #2ea6ff;
+  --blue-2: #5ab6ff;
+  --blue-deep: #0f5ad0;
+  --green: #22e07b;
+  --green-2: #3fe89d;
+  --navy: #05132a;
+  --navy-2: #0b1f3a;
+
+  position: relative;
+  overflow: hidden;
+  padding: 60px 34px 70px;
+  width: 100%;
+  max-width: 100%;
+  font-family: var(--font-body);
+  color: var(--text);
+  -webkit-font-smoothing: antialiased;
+  /* --hero-bg is set inline from the CMS value; with none set the gradient
+     simply falls onto the navy base. */
+  background:
+    linear-gradient(
+      180deg,
+      rgba(4, 14, 32, 0.72) 0%,
+      rgba(4, 14, 32, 0.55) 40%,
+      rgba(4, 14, 32, 0.78) 100%
+    ),
+    var(--hero-bg, none) center center / cover no-repeat,
+    var(--navy);
+}
+
+.wrap h1,
+.wrap h2,
+.wrap h3,
+.wrap h4,
+.wrap .pill,
+.wrap .dividerPill {
+  font-family: var(--font-head);
+}
+
+/* Split blue-left / green-right colour washes */
+.wrap::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background:
+    radial-gradient(1100px 900px at 15% 50%, rgba(20, 90, 220, 0.45), transparent 55%),
+    radial-gradient(1100px 900px at 85% 50%, rgba(15, 170, 110, 0.45), transparent 55%),
+    linear-gradient(
+      90deg,
+      rgba(10, 30, 80, 0.35) 0%,
+      transparent 30%,
+      transparent 70%,
+      rgba(10, 70, 45, 0.35) 100%
+    );
+  pointer-events: none;
+  z-index: 0;
+}
+
+.content {
+  width: 100%;
+}
+
+/* ---------------- hero grid ---------------- */
+.hero {
+  position: relative;
+  z-index: 3;
+  max-width: 1200px;
+  margin: 0 auto;
+  display: grid;
+  grid-template-columns: auto 160px auto;
+  justify-content: space-between;
+  gap: 0;
+  padding: 30px 17px 20px;
+}
+
+.side {
+  position: relative;
+  max-width: 466px;
+  width: 100%;
+}
+
+/* Nudge the green column right for balance against the DNA artwork. */
+.right {
+  transform: translateX(48px);
+}
+
+/* ---------------- centre divider ---------------- */
+.divider {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.divider::before {
+  content: "";
+  position: absolute;
+  top: 6%;
+  bottom: 6%;
+  left: 50%;
+  width: 2px;
+  transform: translateX(-50%);
+  background: linear-gradient(
+    180deg,
+    transparent 0%,
+    rgba(90, 170, 255, 0.35) 18%,
+    rgba(255, 255, 255, 0.2) 50%,
+    rgba(60, 220, 150, 0.35) 82%,
+    transparent 100%
+  );
+  border-radius: 2px;
+  z-index: 1;
+}
+
+.dividerPill {
+  position: relative;
+  z-index: 3;
+  padding: 20px 16px;
+  background: var(--navy-2);
+  border: 1px solid rgba(90, 170, 255, 0.3);
+  border-radius: 14px;
+  color: #eaf1ff;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 1.6px;
+  text-align: center;
+  line-height: 2;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.35);
+}
+
+.pillPrice {
+  margin-top: 14px;
+  padding-top: 12px;
+  border-top: 1px solid rgba(90, 170, 255, 0.25);
+  font-family: var(--font-body);
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.3px;
+  line-height: 1.5;
+  color: #cfe3ff;
+}
+
+.price {
+  font-size: 22px;
+  font-weight: 800;
+  font-family: var(--font-head);
+  color: #fff;
+  text-shadow: 0 0 12px rgba(46, 166, 255, 0.5);
+}
+
+.pillDisclaimer {
+  margin-top: 6px;
+  font-family: var(--font-body);
+  font-size: 9px;
+  font-weight: 500;
+  letter-spacing: 0.2px;
+  color: rgba(207, 227, 255, 0.55);
+}
+
+/* ---------------- eyebrow pill ---------------- */
+.pill {
+  display: inline-block;
+  padding: 7px 18px;
+  border-radius: 999px;
+  background: rgba(30, 110, 220, 0.35);
+  border: 1px solid rgba(90, 170, 255, 0.4);
+  color: #cfe3ff;
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 1.4px;
+  margin-bottom: 14px;
+  backdrop-filter: blur(6px);
+  -webkit-backdrop-filter: blur(6px);
+  opacity: 0;
+  animation: fadeUp 0.7s ease-out 0.1s forwards;
+}
+
+/* ---------------- headline & sub ---------------- */
+.heroTitle {
+  font-size: 48px;
+  line-height: 1.05;
+  font-weight: 800;
+  letter-spacing: -1px;
+  margin-bottom: 8px;
+  color: #fff;
+  text-shadow: 0 4px 24px rgba(0, 0, 0, 0.35);
+  opacity: 0;
+  animation: fadeUp 0.8s ease-out 0.25s forwards;
+}
+
+.right .heroTitle {
+  animation-delay: 0.35s;
+}
+
+.left .heroTitle::after,
+.right .heroTitle::after {
+  content: "";
+  display: block;
+  width: 38px;
+  height: 2.5px;
+  border-radius: 2px;
+  margin-top: 8px;
+}
+
+.left .heroTitle::after {
+  background: var(--blue);
+  box-shadow: 0 0 10px rgba(46, 166, 255, 0.6);
+}
+
+.right .heroTitle::after {
+  background: var(--green);
+  box-shadow: 0 0 10px rgba(34, 224, 123, 0.6);
+}
+
+.green {
+  color: var(--green);
+}
+
+.blue {
+  color: var(--blue);
+}
+
+.heroSub {
+  min-height: 58px;
+  font-size: 18px;
+  line-height: 1.5;
+  color: var(--muted);
+  max-width: 383px;
+  margin-bottom: 17px;
+  font-weight: 400;
+  font-family: var(--font-head);
+  opacity: 0;
+  animation: fadeUp 0.8s ease-out 0.45s forwards;
+}
+
+.right .heroSub {
+  animation-delay: 0.55s;
+}
+
+/* CMS copy marks emphasis with **…**; each column tints it with its own
+   accent rather than rendering it heavier. */
+.heroSub strong {
+  font-weight: 400;
+}
+
+.left .heroSub strong {
+  color: var(--blue);
+}
+
+.right .heroSub strong {
+  color: var(--green);
+}
+
+/* ---------------- feature grid ---------------- */
+.features {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  row-gap: 16px;
+  column-gap: 8px;
+  max-width: 433px;
+  margin-bottom: 18px;
+}
+
+.feat {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 14px 10px 7px;
+  border-radius: 12px;
+  opacity: 0;
+  animation: fadeUp 0.6s ease-out forwards;
+}
+
+.feat:nth-child(1) { animation-delay: 0.55s; }
+.feat:nth-child(2) { animation-delay: 0.65s; }
+.feat:nth-child(3) { animation-delay: 0.75s; }
+.feat:nth-child(4) { animation-delay: 0.85s; }
+.feat:nth-child(5) { animation-delay: 0.95s; }
+.feat:nth-child(6) { animation-delay: 1.05s; }
+
+.right .feat:nth-child(1) { animation-delay: 0.65s; }
+.right .feat:nth-child(2) { animation-delay: 0.75s; }
+.right .feat:nth-child(3) { animation-delay: 0.85s; }
+.right .feat:nth-child(4) { animation-delay: 0.95s; }
+.right .feat:nth-child(5) { animation-delay: 1.05s; }
+.right .feat:nth-child(6) { animation-delay: 1.15s; }
+
+.featIcon {
+  flex: 0 0 37px;
+  width: 37px;
+  height: 37px;
+  border-radius: 50%;
+  display: grid;
+  place-items: center;
+}
+
+.featIcon svg {
+  width: 37px;
+  height: 37px;
+  display: block;
+}
+
+/* Icons inherit `color` — this is what makes the two columns blue vs green. */
+.left .featIcon { color: #1a87ca; }
+.right .featIcon { color: #1fbf72; }
+
+.featText {
+  line-height: 1.3;
+  font-family: var(--font-body);
+}
+
+.t1 {
+  font-size: 15px;
+  font-weight: 400;
+  color: #fff;
+  letter-spacing: -0.1px;
+}
+
+.t2 {
+  font-size: 15px;
+  font-weight: 500;
+  margin-top: 3px;
+  letter-spacing: -0.1px;
+}
+
+.left .t2 { color: var(--blue-2); }
+.right .t2 { color: var(--green-2); }
+
+/* "at" / "Included" prefix stays white so the value pops. */
+.t2Prefix {
+  color: #fff;
+}
+
+/* ---------------- bridging statement ---------------- */
+.heroBridge {
+  grid-column: 1 / -1;
+  max-width: 680px;
+  margin: 42px auto 0;
+  text-align: center;
+  text-wrap: balance;
+  font-family: var(--font-head);
+  font-size: 20px;
+  line-height: 1.45;
+  font-weight: 400;
+  color: var(--muted);
+  text-shadow: 0 2px 16px rgba(0, 0, 0, 0.3);
+  opacity: 0;
+  animation: fadeUp 0.8s ease-out 1.05s forwards;
+}
+
+/* The bridge line leads with a white bold clause, then tints two runs — the
+   tone-blue / tone-green classes come from richText and resolve against this
+   section's locally scoped palette. */
+.heroBridge strong {
+  color: #fff;
+  font-weight: 700;
+}
+
+/* ---------------- CTAs ---------------- */
+.ctaRow {
+  grid-column: 1 / -1;
+  max-width: 660px;
+  margin: 24px auto 0;
+  display: flex;
+  gap: 14px;
+  flex-wrap: wrap;
+  justify-content: center;
+  align-items: stretch;
+  opacity: 0;
+  animation: fadeUp 0.7s ease-out 1.15s forwards;
+}
+
+.ctaBtn {
+  flex: 1 1 0;
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  padding: 15px 28px;
+  font-family: var(--font-body);
+  font-size: 15.5px;
+  font-weight: 700;
+  letter-spacing: 0.2px;
+  color: #fff;
+  text-shadow: 0 1px 1px rgba(0, 0, 0, 0.3);
+  border: none;
+  border-radius: 100px;
+  text-decoration: none;
+  cursor: pointer;
+  overflow: hidden;
+  isolation: isolate;
+  white-space: nowrap;
+  transition:
+    transform 0.18s cubic-bezier(0.2, 0.7, 0.3, 1),
+    box-shadow 0.28s ease,
+    filter 0.25s ease;
+}
+
+.ctaBtn > * {
+  position: relative;
+  z-index: 2;
+}
+
+/* Circular icon coin — never compressed by a long label. */
+.ico {
+  flex: 0 0 auto;
+  display: grid;
+  place-items: center;
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.17);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.4),
+    inset 0 0 0 1px rgba(255, 255, 255, 0.12);
+}
+
+.ico svg {
+  width: 17px;
+  height: 17px;
+  display: block;
+}
+
+/* Top sheen + inner edge + soft inner floor. */
+.ctaBtn::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.22), rgba(255, 255, 255, 0) 40%);
+  box-shadow:
+    inset 0 0 0 1px rgba(255, 255, 255, 0.16),
+    inset 0 -12px 20px rgba(0, 0, 0, 0.18);
+  z-index: 1;
+  pointer-events: none;
+}
+
+/* Slow sheen sweep. */
+.ctaBtn::after {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: -120%;
+  width: 45%;
+  height: 100%;
+  background: linear-gradient(120deg, transparent, rgba(255, 255, 255, 0.22), transparent);
+  transform: skewX(-18deg);
+  animation: shine 5s ease-in-out infinite;
+  z-index: 1;
+  pointer-events: none;
+}
+
+.ctaBtn:hover { transform: translateY(-2px); }
+.ctaBtn:active { transform: translateY(0); }
+.ctaBtn:focus-visible { outline: 2px solid #fff; outline-offset: 3px; }
+
+/* Family — deep royal blue. */
+.ctaFam {
+  background: linear-gradient(168deg, #33a3ff 0%, #1a78ea 50%, var(--blue-deep) 100%);
+  box-shadow:
+    0 1px 1px rgba(0, 0, 0, 0.3),
+    0 10px 26px rgba(15, 90, 208, 0.45),
+    0 0 0 1px rgba(51, 163, 255, 0.3);
+}
+
+.ctaFam:hover {
+  box-shadow:
+    0 1px 1px rgba(0, 0, 0, 0.3),
+    0 16px 40px rgba(15, 90, 208, 0.62),
+    0 0 0 4px rgba(51, 163, 255, 0.18);
+}
+
+/* Organization — navy glass with a green accent. */
+.ctaOrg {
+  background: linear-gradient(168deg, rgba(20, 44, 82, 0.92) 0%, rgba(10, 26, 54, 0.95) 100%);
+  box-shadow:
+    0 1px 1px rgba(0, 0, 0, 0.35),
+    0 10px 26px rgba(0, 0, 0, 0.4),
+    0 0 0 1px rgba(34, 224, 123, 0.35);
+}
+
+.ctaOrg::before {
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.1), rgba(255, 255, 255, 0) 40%);
+  box-shadow:
+    inset 0 0 0 1px rgba(34, 224, 123, 0.18),
+    inset 0 -12px 22px rgba(0, 0, 0, 0.28);
+}
+
+.ctaOrg .ico {
+  color: #4ded9b;
+  background: rgba(34, 224, 123, 0.16);
+  box-shadow: inset 0 0 0 1px rgba(34, 224, 123, 0.5);
+}
+
+.ctaOrg:hover {
+  box-shadow:
+    0 1px 1px rgba(0, 0, 0, 0.35),
+    0 16px 40px rgba(0, 0, 0, 0.5),
+    0 0 0 4px rgba(34, 224, 123, 0.22);
+}
+
+.ctaOrg::after {
+  animation-delay: 1.2s;
+}
+
+.ctaBtnText {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  line-height: 1.3;
+}
+
+.ctaSub {
+  display: block;
+  font-size: 11px;
+  font-weight: 500;
+  letter-spacing: 0.2px;
+  opacity: 0.8;
+  margin-top: 2px;
+}
+
+/* Tertiary learn-more — a text link, not a competing button. */
+.ctaLink {
+  grid-column: 1 / -1;
+  text-align: center;
+  margin-top: 12px;
+  color: #bcd3f0;
+  font-family: var(--font-body);
+  font-size: 13px;
+  font-weight: 600;
+  letter-spacing: 0.3px;
+  text-decoration: none;
+  opacity: 0;
+  animation: fadeUp 0.7s ease-out 1.25s forwards;
+  transition: color 0.2s;
+}
+
+.ctaLink:hover {
+  color: #fff;
+}
+
+/* ---------------- trust bar ---------------- */
+.trust {
+  position: relative;
+  z-index: 3;
+  max-width: 940px;
+  margin: 24px auto 10px;
+  padding: 12px 22px;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 11px 24px;
+  list-style: none;
+  background: rgba(6, 20, 40, 0.32);
+  border: 1px solid rgba(255, 255, 255, 0.07);
+  border-radius: 14px;
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  font-family: var(--font-body);
+  opacity: 0;
+  animation: fadeUp 0.8s ease-out 1.3s forwards;
+}
+
+.trustItem {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 12px;
+  color: #dfe6f2;
+  font-weight: 500;
+  transition: color 0.2s;
+}
+
+.trustItem:hover {
+  color: #fff;
+}
+
+.trustItem:hover .check {
+  transform: scale(1.15);
+  box-shadow: 0 0 10px rgba(34, 224, 123, 0.6);
+}
+
+.check {
+  width: 17px;
+  height: 17px;
+  border-radius: 50%;
+  background: rgba(34, 224, 123, 0.15);
+  border: 1.5px solid var(--green);
+  display: grid;
+  place-items: center;
+  flex: 0 0 17px;
+  transition:
+    transform 0.25s,
+    box-shadow 0.25s;
+}
+
+.check svg {
+  width: 10px;
+  height: 10px;
+  animation: checkPop 0.6s ease-out backwards;
+}
+
+.trustItem:nth-child(1) .check svg { animation-delay: 1.5s; }
+.trustItem:nth-child(2) .check svg { animation-delay: 1.6s; }
+.trustItem:nth-child(3) .check svg { animation-delay: 1.7s; }
+.trustItem:nth-child(4) .check svg { animation-delay: 1.8s; }
+.trustItem:nth-child(5) .check svg { animation-delay: 1.9s; }
+.trustItem:nth-child(6) .check svg { animation-delay: 2s; }
+
+/* ============================================================
+   RESPONSIVE
+   ============================================================ */
+@media (max-width: 1000px) {
+  .wrap {
+    padding: 20px 20px 24px;
+    background-attachment: scroll, scroll, scroll;
+    display: block;
+    min-height: 0;
+  }
+
+  .hero {
+    grid-template-columns: 1fr;
+    gap: 0;
+    padding: 8px 0 0;
+  }
+
+  .divider {
+    display: none;
+  }
+
+  .left {
+    padding-bottom: 0;
+    border-bottom: none;
+  }
+
+  .heroTitle {
+    font-size: 40px;
+    margin-bottom: 10px;
+  }
+
+  .heroTitle br {
+    display: none;
+  }
+
+  .heroSub {
+    min-height: 0;
+    margin-bottom: 18px;
+    max-width: 100%;
+  }
+
+  .features {
+    max-width: 100%;
+  }
+
+  .t1 br {
+    display: none;
+  }
+
+  .trust {
+    margin-top: 24px;
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    justify-content: initial;
+    gap: 10px 16px;
+  }
+
+  /* Dissolve the side wrappers so inner blocks become direct rows of .hero,
+     letting the CTA row be pushed to the end via `order`. */
+  .left,
+  .right {
+    display: contents;
+  }
+
+  .ctaRow {
+    order: 99;
+    margin-top: 10px;
+    max-width: 560px;
+  }
+
+  .ctaBtn {
+    padding: 15px 16px;
+    font-size: 14px;
+    /* The pills are much narrower here, so label + sub-label must wrap. */
+    white-space: normal;
+    text-align: center;
+  }
+
+  .ctaSub {
+    white-space: normal;
+    line-height: 1.35;
+  }
+
+  .ctaLink {
+    order: 100;
+    margin-top: 8px;
+  }
+
+  /* Preserve visual order of the remaining rows without a wrapper. */
+  .left .pill { order: 1; }
+  .left .heroTitle { order: 2; }
+  .left .heroSub { order: 3; }
+  .left .features { order: 4; }
+  .right .heroTitle { order: 5; margin-top: 8px; }
+  .right .heroSub { order: 6; }
+  .right .features { order: 7; }
+
+  .heroBridge {
+    order: 8;
+    max-width: 100%;
+    margin: 22px 0 4px;
+    font-size: 18px;
+  }
+}
+
+@media (max-width: 600px) {
+  .wrap {
+    padding: 16px 16px 30px;
+  }
+
+  .heroTitle {
+    font-size: 32px;
+    letter-spacing: -0.8px;
+  }
+
+  .heroSub {
+    font-size: 16px;
+  }
+
+  .features {
+    grid-template-columns: 1fr;
+    gap: 12px;
+    max-width: 100%;
+  }
+
+  .featIcon {
+    flex: 0 0 40px;
+    width: 40px;
+    height: 40px;
+  }
+
+  .featIcon svg {
+    width: 40px;
+    height: 40px;
+  }
+
+  .t1,
+  .t2 {
+    font-size: 14px;
+  }
+
+  .ctaRow {
+    flex-direction: column;
+    max-width: 100%;
+    align-items: stretch;
+    gap: 12px;
+  }
+
+  .ctaBtn {
+    width: 100%;
+    white-space: normal;
+    min-height: 62px;
+    padding: 13px 20px;
+    font-size: 15px;
+    text-align: center;
+    line-height: 1.25;
+  }
+
+  .ctaBtnText {
+    width: 100%;
+  }
+
+  .ctaSub {
+    white-space: normal;
+    font-size: 10.5px;
+    line-height: 1.35;
+    margin-top: 4px;
+    max-width: 30ch;
+    margin-left: auto;
+    margin-right: auto;
+  }
+
+  /* Long labels wrap to two lines — align to the top so the tick stays level. */
+  .trust {
+    padding: 14px 18px;
+    gap: 12px 14px;
+    align-items: start;
+  }
+
+  .trustItem {
+    font-size: 13px;
+    align-items: flex-start;
+    line-height: 1.35;
+  }
+
+  .trustItem .check {
+    margin-top: 1px;
+  }
+
+  .pill {
+    font-size: 11px;
+    padding: 7px 16px;
+  }
+
+  .heroBridge {
+    font-size: 16px;
+  }
+}
+
+@media (max-width: 400px) {
+  /* Very narrow phones: one trust item per row beats two cramped columns. */
+  .trust {
+    grid-template-columns: 1fr;
+  }
+
+  .ctaBtn {
+    padding: 13px 14px;
+    font-size: 14.5px;
+  }
+
+  .ctaSub {
+    font-size: 10px;
+    max-width: 100%;
+  }
+}

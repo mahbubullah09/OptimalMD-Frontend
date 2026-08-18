@@ -1,0 +1,123 @@
+.appGrid {
+  display: grid;
+  grid-template-columns: 1.1fr 0.9fr;
+  gap: 60px;
+  align-items: center;
+}
+
+.appCopy :global(.sec-sub) {
+  color: var(--muted);
+  margin-bottom: 34px;
+}
+
+.storeRow {
+  display: flex;
+  gap: 14px;
+  flex-wrap: wrap;
+  align-items: center;
+  margin-bottom: 26px;
+}
+
+.storeRow img {
+  height: 52px;
+  width: auto;
+  border-radius: 9px;
+  transition: 0.2s;
+}
+
+.storeRow a:hover img {
+  transform: translateY(-3px);
+  filter: drop-shadow(0 8px 18px rgba(31, 169, 232, 0.4));
+}
+
+.bbbImg {
+  height: 60px;
+  width: auto;
+  background: #fff;
+  border-radius: 8px;
+  padding: 5px;
+}
+
+.phoneWrap {
+  display: flex;
+  justify-content: center;
+  position: relative;
+}
+
+.phoneGlow {
+  position: absolute;
+  inset: -40px;
+  background: radial-gradient(
+    closest-side,
+    rgba(31, 169, 232, 0.3),
+    rgba(31, 169, 232, 0.14),
+    transparent
+  );
+  filter: blur(14px);
+  pointer-events: none;
+}
+
+.phoneImg {
+  position: relative;
+  max-width: 400px;
+  width: 100%;
+  filter: drop-shadow(0 30px 60px rgba(0, 0, 0, 0.5));
+  transition: transform 0.35s ease;
+}
+
+.phoneImg:hover {
+  transform: translateY(-10px) rotate(-1.2deg);
+}
+
+@media (max-width: 980px) {
+  .appGrid {
+    grid-template-columns: 1fr;
+    gap: 44px;
+  }
+
+  .appGrid > * {
+    min-width: 0;
+  }
+
+  .phoneImg {
+    max-width: 320px;
+  }
+
+  /* .phoneGlow uses inset:-40px, more than the section padding allows. */
+  .phoneWrap {
+    overflow: hidden;
+  }
+}
+
+@media (max-width: 600px) {
+  /* Both store badges are ~155px and ~175px wide; at their desktop height they
+     total more than a phone's content width and wrap onto separate rows.
+     Scaling them down keeps the pair on one line, as in the design. */
+  .storeRow img {
+    height: 42px;
+  }
+
+  .storeRow {
+    gap: 10px;
+    margin-bottom: 20px;
+  }
+
+  .appGrid {
+    gap: 32px;
+  }
+
+  .phoneImg {
+    max-width: 260px;
+  }
+
+  /* The glow is inset by -40px, more than the section padding allows here. */
+  .phoneGlow {
+    inset: -20px;
+  }
+}
+
+@media (max-width: 380px) {
+  .storeRow img {
+    height: 38px;
+  }
+}

@@ -1,0 +1,24 @@
+/* This section is a LIGHT surface, so `.light .sec-sub` already colours the
+   sub-copy — no override needed here. */
+.finalCta {
+  text-align: center;
+}
+
+.finalCta :global(.sec-sub) {
+  margin: 0 auto 36px;
+}
+
+.cta {
+  font-size: 18px;
+  padding: 18px 48px;
+}
+
+@media (max-width: 600px) {
+  /* Keeps the button inside the viewport on the narrowest phones rather than
+     letting its fixed horizontal padding push it past the edge. */
+  .cta {
+    font-size: 16px;
+    padding: 15px 28px;
+    max-width: 100%;
+  }
+}

@@ -1,49 +1,384 @@
+/* ============================================================
+   OptimalMD — design tokens + shared section primitives
+   Brand Guidelines v2 §4. Section-specific styling lives in each
+   component's own .module.css.
+   ============================================================ */
+
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
-}
+  /* PRIMARY palette only — no other blues/greens */
+  --navy: #0b2545;
+  --navy-deep: #061b33;
+  --navy-2: #123056; /* Primary Navy, lifted — surfaces only */
+  --blue: #1fa9e8;
+  --green: #5ba84a;
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
-}
+  /* Gradients: navy -> bright blue only. No green in gradients. */
+  --grad: linear-gradient(92deg, #0b2545, #1fa9e8);
+  --grad-rev: linear-gradient(92deg, #1fa9e8, #0b2545);
+  --grad-anim: linear-gradient(92deg, #1fa9e8, #7fd1f5, #1fa9e8);
 
-html {
-  height: 100%;
-}
+  /* Gradient text defaults to the ON-DARK version (navy would vanish on
+     navy). Light sections override it via .light / .light-alt. */
+  --grad-text: linear-gradient(92deg, #7fd1f5, #1fa9e8);
 
-html,
-body {
-  max-width: 100vw;
-  overflow-x: hidden;
-}
+  --text: #ffffff;
+  --muted: #b9cbdd;
+  --card: rgba(255, 255, 255, 0.05);
+  --border: rgba(255, 255, 255, 0.1);
 
-body {
-  min-height: 100%;
-  display: flex;
-  flex-direction: column;
-  color: var(--foreground);
-  background: var(--background);
-  font-family: Arial, Helvetica, sans-serif;
-  -webkit-font-smoothing: antialiased;
-  -moz-osx-font-smoothing: grayscale;
+  /* Light theme — body copy is always navy on white, never gray */
+  --l-text: #0b2545;
+  --l-muted: #0b2545;
+  --l-caption: #6b7280; /* Supporting: captions ONLY */
+  --l-card: #ffffff;
+  --l-bg-alt: #f5f7fa; /* Supporting: section backgrounds */
+  --l-border: #e8f1fa; /* Supporting: hairlines */
+
+  /* Typography — injected by next/font in layout.tsx */
+  --font-head: var(--font-montserrat), -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  --font-body: var(--font-open-sans), -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
 }
 
 * {
-  box-sizing: border-box;
-  padding: 0;
   margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+  font-family: var(--font-body);
 }
 
-a {
-  color: inherit;
+h1,
+h2,
+h3,
+h4,
+h5,
+h6,
+.sec-title,
+.sec-sub,
+.sec-eyebrow,
+.eyebrow {
+  font-family: var(--font-head);
+}
+
+h1 *,
+h2 *,
+h3 *,
+h4 *,
+h5 *,
+h6 *,
+.sec-title *,
+.sec-sub *,
+.sec-eyebrow *,
+.eyebrow * {
+  font-family: inherit;
+}
+
+html {
+  scroll-behavior: smooth;
+}
+
+body {
+  background: var(--navy);
+  color: var(--text);
+  overflow-x: hidden;
+}
+
+svg {
+  fill: none;
+}
+
+img {
+  max-width: 100%;
+}
+
+/* ================= SHARED SECTION PRIMITIVES ================= */
+.section {
+  padding: 92px 6vw;
+}
+
+.wrap {
+  max-width: 1080px;
+  margin: 0 auto;
+}
+
+.sec-eyebrow {
+  display: inline-block;
+  font-size: 12px;
+  letter-spacing: 2.2px;
+  text-transform: uppercase;
+  font-weight: 700;
+  background: var(--grad-text);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+  margin-bottom: 14px;
+}
+
+.sec-title {
+  font-size: clamp(28px, 3.6vw, 40px);
+  font-weight: 800;
+  letter-spacing: -0.6px;
+  line-height: 1.15;
+  margin-bottom: 14px;
+}
+
+.sec-sub {
+  font-size: 17px;
+  line-height: 1.65;
+  max-width: 660px;
+}
+
+.center {
+  text-align: center;
+}
+
+.center .sec-sub {
+  margin: 0 auto;
+}
+
+.light {
+  background: #fff;
+  color: var(--l-text);
+  --grad-text: var(--grad);
+}
+
+.light-alt {
+  background: var(--l-bg-alt);
+  color: var(--l-text);
+  --grad-text: var(--grad);
+}
+
+.light .sec-sub,
+.light-alt .sec-sub {
+  color: var(--l-muted);
+}
+
+/* Emphasis inside a section sub-heading takes the brand gradient, matching
+   the .gt spans the original markup used. */
+.light .sec-sub strong,
+.light-alt .sec-sub strong {
+  background: var(--grad-text);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+  font-weight: 700;
+}
+
+.src {
+  font-size: 12px;
+  color: var(--l-caption);
+  margin-top: 8px;
+  font-style: italic;
+}
+
+/* Tinted runs emitted by richText for {{blue|…}} / {{green|…}} markers.
+   Inside a section that scopes its own --blue/--green (the hero does), these
+   pick up that local palette automatically. */
+.tone-blue {
+  color: var(--blue);
+}
+
+.tone-green {
+  color: var(--green);
+}
+
+/* Gradient text helper */
+.gt {
+  background: var(--grad-text);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+}
+
+/* Scroll reveal — driven by <Reveal /> */
+.reveal {
+  opacity: 0;
+  transform: translateY(26px);
+  transition:
+    opacity 0.7s ease,
+    transform 0.7s ease;
+}
+
+.reveal.visible {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+/* Reduced motion: show everything immediately, so <Reveal> never has to
+   branch on a media query in JS. */
+@media (prefers-reduced-motion: reduce) {
+  .reveal {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+/* ================= SHARED BUTTONS ================= */
+.btn-primary {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  padding: 16px 40px;
+  border-radius: 11px;
   text-decoration: none;
+  font-size: 17px;
+  font-weight: 700;
+  color: #ffffff;
+  background: var(--grad);
+  box-shadow:
+    0 8px 34px rgba(31, 169, 232, 0.5),
+    0 0 70px rgba(31, 169, 232, 0.22);
+  transition:
+    transform 0.15s,
+    box-shadow 0.15s;
+  position: relative;
+  overflow: hidden;
 }
 
-@media (prefers-color-scheme: dark) {
-  html {
-    color-scheme: dark;
+.btn-primary svg {
+  width: 19px;
+  height: 19px;
+  stroke: #ffffff;
+}
+
+.btn-primary:hover {
+  transform: translateY(-2px) scale(1.02);
+  box-shadow:
+    0 14px 48px rgba(31, 169, 232, 0.6),
+    0 0 90px rgba(31, 169, 232, 0.35);
+}
+
+.btn-primary::after {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: -80%;
+  width: 50%;
+  height: 100%;
+  background: linear-gradient(100deg, transparent, rgba(255, 255, 255, 0.45), transparent);
+  animation: shine 3.2s infinite;
+}
+
+@keyframes shine {
+  0% {
+    left: -80%;
+  }
+  45%,
+  100% {
+    left: 130%;
+  }
+}
+
+.btn-secondary {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  padding: 16px 32px;
+  border-radius: 11px;
+  text-decoration: none;
+  font-size: 17px;
+  font-weight: 600;
+  color: var(--text);
+  border: 1px solid rgba(31, 169, 232, 0.55);
+  background: rgba(31, 169, 232, 0.08);
+  transition: 0.2s;
+}
+
+.btn-secondary svg {
+  width: 18px;
+  height: 18px;
+  stroke: var(--blue);
+  transition: transform 0.2s;
+}
+
+.btn-secondary:hover {
+  border-color: var(--blue);
+  background: rgba(31, 169, 232, 0.1);
+  box-shadow: 0 0 36px rgba(31, 169, 232, 0.3);
+}
+
+.btn-secondary:hover svg {
+  transform: translateX(4px);
+  stroke: var(--blue);
+}
+
+/* ================= BG TEXTURE (dark areas) ================= */
+.bg-texture {
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  z-index: 0;
+  background-image:
+    radial-gradient(ellipse 850px 540px at 74% -12%, rgba(31, 169, 232, 0.18), transparent),
+    radial-gradient(ellipse 720px 540px at 12% 112%, rgba(31, 169, 232, 0.1), transparent);
+}
+
+.bg-texture::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  opacity: 0.4;
+  background-image: url("data:image/svg+xml,%3Csvg width='120' height='120' viewBox='0 0 120 120' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' stroke='%23ffffff' stroke-opacity='0.05' stroke-width='1.5'%3E%3Cpath d='M57 20h6v6h6v6h-6v6h-6v-6h-6v-6h6z'/%3E%3Ccircle cx='20' cy='90' r='7'/%3E%3Cpath d='M95 85c0-6 10-6 10 0s-10 6-10 12'/%3E%3C/g%3E%3C/svg%3E");
+}
+
+/* Scoped to the public site. As a bare `main` selector this also matched the
+   admin portal's <main>, painting it navy and — because of `color` — turning
+   every admin label that inherited its colour invisible. */
+.site-main {
+  position: relative;
+  z-index: 1;
+  background-color: var(--navy);
+  background-image:
+    radial-gradient(ellipse 850px 540px at 74% -12%, rgba(31, 169, 232, 0.18), transparent),
+    radial-gradient(ellipse 720px 540px at 12% 112%, rgba(31, 169, 232, 0.1), transparent);
+  color: var(--text);
+}
+
+/* ================= RESPONSIVE ================= */
+/* Under 900px the nav switches to position:fixed (so the mobile menu can
+   overlay the page), which takes it out of flow — offset the body by its
+   72px height. The source page did this with a JS-written inline style. */
+@media (max-width: 900px) {
+  body {
+    padding-top: 72px;
+  }
+}
+
+@media (max-width: 600px) {
+  .section {
+    padding: 64px 5vw;
+  }
+}
+
+/* =========================================================
+   MOBILE-ONLY HORIZONTAL SCROLL FIX
+   Keep last so it wins on source order.
+   ========================================================= */
+@media (max-width: 980px) {
+  html,
+  body {
+    overflow-x: hidden !important;
+    max-width: 100%;
+  }
+
+  /* `clip`, not `hidden`, so position:sticky keeps working. */
+  .site-main {
+    overflow-x: clip;
+    max-width: 100%;
+  }
+
+  .section,
+  .wrap {
+    max-width: 100%;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.001ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.001ms !important;
+    scroll-behavior: auto !important;
   }
 }

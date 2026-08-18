@@ -1,0 +1,1667 @@
+/* ============================================================
+   Admin portal shell.
+
+   Deliberately its own visual language — a light, dense app UI rather than
+   the marketing site's dark hero styling. Scoped under .adminRoot so none of
+   the public design system's global rules apply here.
+   ============================================================ */
+
+.adminRoot {
+  --a-bg: #f4f6fa;
+  --a-surface: #ffffff;
+  --a-border: #e2e8f0;
+  --a-text: #0f1b2d;
+  --a-muted: #64748b;
+  --a-accent: #1fa9e8;
+  --a-accent-ink: #0b2545;
+  --a-danger: #dc2626;
+  --a-radius: 10px;
+
+  min-height: 100vh;
+  background: var(--a-bg);
+  color: var(--a-text);
+  font-family: var(--font-open-sans), system-ui, sans-serif;
+  font-size: 14px;
+}
+
+.adminRoot * {
+  box-sizing: border-box;
+}
+
+.adminRoot h1,
+.adminRoot h2,
+.adminRoot h3 {
+  font-family: var(--font-montserrat), system-ui, sans-serif;
+  color: var(--a-text);
+}
+
+/* ---------------- app frame ---------------- */
+.shell {
+  display: grid;
+  grid-template-columns: 264px 1fr;
+  min-height: 100vh;
+}
+
+.sidebar {
+  background: var(--a-accent-ink);
+  color: #e6eefb;
+  padding: 18px 12px 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  position: sticky;
+  top: 0;
+  height: 100vh;
+}
+
+.brand {
+  display: block;
+  padding: 4px 10px 18px;
+}
+
+.brandLogo {
+  height: 40px;
+  width: auto;
+  display: block;
+}
+
+/* ---------------- grouped navigation ---------------- */
+.navRoot {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  overflow-y: auto;
+  /* The footer block is pinned, so only this list scrolls when pages grow. */
+  flex: 1;
+  min-height: 0;
+  margin: 0 -4px;
+  padding: 0 4px;
+}
+
+.navLabel {
+  font-size: 10.5px;
+  letter-spacing: 1.4px;
+  text-transform: uppercase;
+  color: rgba(230, 238, 251, 0.4);
+  padding: 16px 10px 6px;
+  font-weight: 700;
+}
+
+.navLink {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+  padding: 9px 10px;
+  border: none;
+  border-radius: 9px;
+  background: none;
+  color: rgba(230, 238, 251, 0.82);
+  text-decoration: none;
+  font-family: inherit;
+  font-size: 13.5px;
+  font-weight: 500;
+  cursor: pointer;
+  text-align: left;
+  transition: background 0.15s, color 0.15s;
+}
+
+.navLink:hover {
+  background: rgba(255, 255, 255, 0.07);
+  color: #fff;
+}
+
+.navLink[aria-current="page"] {
+  background: rgba(31, 169, 232, 0.2);
+  color: #fff;
+  font-weight: 600;
+}
+
+/* A group whose contents are open still marks the section you are in. */
+.navGroupHead.isCurrent {
+  color: #fff;
+}
+
+.navIcon {
+  width: 17px;
+  height: 17px;
+  flex-shrink: 0;
+  stroke: currentColor;
+}
+
+.navCount {
+  margin-left: auto;
+  font-size: 11px;
+  font-weight: 700;
+  color: rgba(230, 238, 251, 0.55);
+  background: rgba(255, 255, 255, 0.08);
+  border-radius: 100px;
+  padding: 1px 7px;
+}
+
+.navChevron {
+  width: 13px;
+  height: 13px;
+  flex-shrink: 0;
+  stroke: currentColor;
+  transition: transform 0.18s;
+}
+
+.navChevron.isOpen {
+  transform: rotate(90deg);
+}
+
+.navChildren {
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+  padding: 4px 0 6px 20px;
+  position: relative;
+}
+
+/* Guide rail makes the nesting readable at a glance. */
+.navChildren::before {
+  content: "";
+  position: absolute;
+  left: 19px;
+  top: 4px;
+  bottom: 6px;
+  width: 1px;
+  background: rgba(255, 255, 255, 0.12);
+}
+
+.navChild {
+  display: block;
+  padding: 7px 10px;
+  border-radius: 7px;
+  color: rgba(230, 238, 251, 0.7);
+  text-decoration: none;
+  font-size: 13px;
+  transition: background 0.15s, color 0.15s;
+}
+
+.navChild:hover {
+  background: rgba(255, 255, 255, 0.06);
+  color: #fff;
+}
+
+.navChild[aria-current="page"] {
+  background: rgba(31, 169, 232, 0.22);
+  color: #fff;
+  font-weight: 600;
+}
+
+.navFilter {
+  width: 100%;
+  margin-bottom: 5px;
+  padding: 6px 9px;
+  border-radius: 7px;
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  background: rgba(0, 0, 0, 0.2);
+  color: #fff;
+  font-family: inherit;
+  font-size: 12.5px;
+}
+
+.navFilter::placeholder {
+  color: rgba(230, 238, 251, 0.4);
+}
+
+.navFilter:focus {
+  outline: none;
+  border-color: var(--a-accent);
+}
+
+.navEmpty {
+  font-size: 12px;
+  color: rgba(230, 238, 251, 0.5);
+  padding: 6px 10px;
+}
+
+/* ---------------- sidebar footer ---------------- */
+.sidebarFoot {
+  margin-top: auto;
+  padding-top: 14px;
+  border-top: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.who {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 4px 6px 12px;
+}
+
+.whoAvatar {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  flex-shrink: 0;
+  display: grid;
+  place-items: center;
+  background: var(--a-accent);
+  color: #fff;
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.whoText {
+  min-width: 0;
+  font-size: 12px;
+  line-height: 1.45;
+}
+
+.whoText b {
+  display: block;
+  color: #fff;
+  font-size: 13px;
+}
+
+.whoText span {
+  display: block;
+  color: rgba(230, 238, 251, 0.55);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* ---------------- main ---------------- */
+.main {
+  padding: 26px 30px 60px;
+  min-width: 0;
+}
+
+.pageHead {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 20px;
+  flex-wrap: wrap;
+  margin-bottom: 22px;
+}
+
+.pageHead h1 {
+  font-size: 22px;
+  font-weight: 800;
+  letter-spacing: -0.3px;
+}
+
+.pageHead p {
+  color: var(--a-muted);
+  margin-top: 4px;
+  font-size: 13.5px;
+}
+
+.card {
+  background: var(--a-surface);
+  border: 1px solid var(--a-border);
+  border-radius: var(--a-radius);
+  padding: 20px;
+}
+
+.cardGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+  gap: 14px;
+}
+
+.sectionRow {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 14px;
+  padding: 13px 16px;
+  border: 1px solid var(--a-border);
+  border-radius: 8px;
+  background: var(--a-surface);
+  text-decoration: none;
+  color: inherit;
+  transition: border-color 0.15s, box-shadow 0.15s;
+}
+
+.sectionRow:hover {
+  border-color: var(--a-accent);
+  box-shadow: 0 2px 10px rgba(11, 37, 69, 0.07);
+}
+
+.sectionRow b {
+  font-size: 14px;
+  display: block;
+}
+
+.sectionRow small {
+  color: var(--a-muted);
+  font-size: 12px;
+}
+
+.stack {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.badge {
+  font-size: 11px;
+  font-weight: 700;
+  padding: 3px 9px;
+  border-radius: 100px;
+  background: #e8f5ec;
+  color: #17663a;
+  white-space: nowrap;
+}
+
+.badgeOff {
+  background: #f1f5f9;
+  color: var(--a-muted);
+}
+
+/* ---------------- forms ---------------- */
+.field {
+  display: block;
+  margin-bottom: 14px;
+}
+
+.field > span {
+  display: block;
+  font-size: 12.5px;
+  font-weight: 600;
+  margin-bottom: 5px;
+  color: var(--a-text);
+}
+
+.field small {
+  display: block;
+  color: var(--a-muted);
+  font-weight: 400;
+  font-size: 11.5px;
+  margin-top: 3px;
+}
+
+.input,
+.textarea {
+  width: 100%;
+  padding: 9px 11px;
+  border: 1px solid var(--a-border);
+  border-radius: 8px;
+  font-size: 13.5px;
+  font-family: inherit;
+  color: var(--a-text);
+  background: #fff;
+  transition: border-color 0.15s, box-shadow 0.15s;
+}
+
+.input:focus,
+.textarea:focus {
+  outline: none;
+  border-color: var(--a-accent);
+  box-shadow: 0 0 0 3px rgba(31, 169, 232, 0.15);
+}
+
+.textarea {
+  min-height: 90px;
+  resize: vertical;
+  line-height: 1.55;
+}
+
+.mono {
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  font-size: 12.5px;
+  line-height: 1.6;
+  color: var(--a-text);
+}
+
+.checkRow {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  font-size: 13.5px;
+  margin-bottom: 14px;
+}
+
+.btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 9px 18px;
+  border-radius: 8px;
+  border: 1px solid transparent;
+  font-size: 13.5px;
+  font-weight: 600;
+  font-family: inherit;
+  cursor: pointer;
+  text-decoration: none;
+  transition: background 0.15s, border-color 0.15s, opacity 0.15s;
+}
+
+.btnPrimary {
+  background: var(--a-accent);
+  color: #fff;
+}
+
+.btnPrimary:hover:not(:disabled) {
+  background: #1791ca;
+}
+
+.btnGhost {
+  background: transparent;
+  border-color: var(--a-border);
+  color: var(--a-text);
+}
+
+.btnGhost:hover:not(:disabled) {
+  border-color: var(--a-muted);
+}
+
+.btn:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+}
+
+.alert {
+  padding: 10px 13px;
+  border-radius: 8px;
+  font-size: 13px;
+  margin-bottom: 14px;
+  line-height: 1.5;
+}
+
+.alertError {
+  background: #fef2f2;
+  border: 1px solid #fecaca;
+  color: #991b1b;
+}
+
+.alertOk {
+  background: #f0fdf4;
+  border: 1px solid #bbf7d0;
+  color: #166534;
+}
+
+.alertWarn {
+  background: #fffbeb;
+  border: 1px solid #fde68a;
+  color: #92400e;
+}
+
+/* ---------------- login ---------------- */
+.loginWrap {
+  min-height: 100vh;
+  display: grid;
+  place-items: center;
+  padding: 24px;
+  background: linear-gradient(160deg, #0b2545 0%, #123056 100%);
+}
+
+.loginCard {
+  width: 100%;
+  max-width: 380px;
+  background: var(--a-surface);
+  border-radius: 14px;
+  padding: 30px 28px;
+  box-shadow: 0 24px 60px rgba(4, 14, 32, 0.4);
+}
+
+.loginCard h1 {
+  font-size: 19px;
+  font-weight: 800;
+  margin-bottom: 4px;
+}
+
+.loginCard .sub {
+  color: var(--a-muted);
+  font-size: 13px;
+  margin-bottom: 22px;
+}
+
+.loginCard .btn {
+  width: 100%;
+  margin-top: 4px;
+}
+
+/* ---------------- responsive ---------------- */
+@media (max-width: 860px) {
+  .shell {
+    grid-template-columns: 1fr;
+  }
+
+  .sidebar {
+    position: static;
+    height: auto;
+    flex-direction: row;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 4px;
+    padding: 12px 14px;
+  }
+
+  .brand {
+    padding: 0 10px 0 0;
+  }
+
+  .navLabel {
+    display: none;
+  }
+
+  .sidebarFoot {
+    margin-top: 0;
+    padding-top: 0;
+    border-top: none;
+    margin-left: auto;
+  }
+
+  .who {
+    display: none;
+  }
+
+  .main {
+    padding: 20px 16px 48px;
+  }
+}
+
+/* ============================================================
+   WORKSPACE — split editor with live preview
+   ============================================================ */
+.workspace {
+  display: flex;
+  flex-direction: column;
+  height: 100vh;
+}
+
+.wsBar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 12px 20px;
+  background: var(--a-surface);
+  border-bottom: 1px solid var(--a-border);
+  flex-wrap: wrap;
+}
+
+.wsBar h1 {
+  font-size: 17px;
+  font-weight: 800;
+}
+
+.wsBar p {
+  font-size: 12.5px;
+  color: var(--a-muted);
+  margin-top: 2px;
+}
+
+.wsBarTools {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.segmented {
+  display: inline-flex;
+  border: 1px solid var(--a-border);
+  border-radius: 8px;
+  overflow: hidden;
+  background: var(--a-bg);
+}
+
+.segmented button {
+  border: none;
+  background: none;
+  padding: 7px 13px;
+  font-size: 12.5px;
+  font-weight: 600;
+  font-family: inherit;
+  color: var(--a-muted);
+  cursor: pointer;
+  transition: background 0.15s, color 0.15s;
+}
+
+.segmented button[aria-pressed="true"] {
+  background: var(--a-accent);
+  color: #fff;
+}
+
+.segmentedWide {
+  width: 100%;
+  margin-bottom: 14px;
+}
+
+.segmentedWide button {
+  flex: 1;
+  padding: 9px 12px;
+  font-size: 13px;
+}
+
+.wsBody {
+  display: grid;
+  grid-template-columns: 430px 1fr;
+  flex: 1;
+  min-height: 0;
+}
+
+.wsPanel {
+  border-right: 1px solid var(--a-border);
+  background: var(--a-surface);
+  padding: 16px;
+  overflow-y: auto;
+  min-width: 0;
+}
+
+/* ---- section list ---- */
+.sectionNav {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  margin-bottom: 18px;
+}
+
+.sectionNavItem {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  padding: 8px 11px;
+  border: 1px solid transparent;
+  border-radius: 7px;
+  background: none;
+  font-family: inherit;
+  font-size: 13px;
+  color: var(--a-text);
+  cursor: pointer;
+  text-align: left;
+  transition: background 0.14s, border-color 0.14s;
+}
+
+.sectionNavItem:hover {
+  background: var(--a-bg);
+}
+
+.sectionNavItem.active {
+  background: #eaf6fd;
+  border-color: rgba(31, 169, 232, 0.4);
+  font-weight: 700;
+}
+
+.sectionNavItem em {
+  font-style: normal;
+  font-size: 11px;
+  color: var(--a-muted);
+}
+
+.dot {
+  display: inline-block;
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--a-accent);
+  margin-left: 7px;
+  vertical-align: middle;
+}
+
+/* ---- form ---- */
+.wsFormHead {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding-bottom: 12px;
+  margin-bottom: 14px;
+  border-bottom: 1px solid var(--a-border);
+}
+
+.wsFormHead h2 {
+  font-size: 15px;
+  font-weight: 800;
+}
+
+.switch {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  font-size: 12.5px;
+  color: var(--a-muted);
+  cursor: pointer;
+}
+
+.wsFormFoot {
+  position: sticky;
+  bottom: 0;
+  padding: 12px 0 4px;
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0), var(--a-surface) 30%);
+}
+
+.group {
+  border: 1px solid var(--a-border);
+  border-radius: 10px;
+  padding: 14px;
+  margin-bottom: 16px;
+}
+
+.group legend {
+  font-size: 12px;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.8px;
+  color: var(--a-accent);
+  padding: 0 6px;
+}
+
+.groupNote {
+  font-size: 12px;
+  color: var(--a-muted);
+  line-height: 1.55;
+  margin-bottom: 12px;
+}
+
+/* ---- repeatable + list controls ---- */
+.listStack,
+.repeatStack {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  margin-bottom: 8px;
+}
+
+.listRow {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+}
+
+.listRow .input {
+  flex: 1;
+  min-width: 0;
+}
+
+.iconBtn {
+  flex-shrink: 0;
+  width: 28px;
+  height: 32px;
+  border: 1px solid var(--a-border);
+  border-radius: 6px;
+  background: #fff;
+  color: var(--a-muted);
+  font-size: 12px;
+  cursor: pointer;
+  transition: border-color 0.14s, color 0.14s;
+}
+
+.iconBtn:hover:not(:disabled) {
+  border-color: var(--a-accent);
+  color: var(--a-accent);
+}
+
+.iconBtn:disabled {
+  opacity: 0.35;
+  cursor: not-allowed;
+}
+
+.iconBtnDanger:hover:not(:disabled) {
+  border-color: var(--a-danger);
+  color: var(--a-danger);
+}
+
+.repeatItem {
+  border: 1px solid var(--a-border);
+  border-radius: 8px;
+  background: var(--a-bg);
+  overflow: hidden;
+}
+
+.repeatItem > summary {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  padding: 9px 11px;
+  cursor: pointer;
+  font-size: 13px;
+  font-weight: 600;
+  list-style: none;
+  /* Set explicitly rather than inherited: these sit on a tinted panel and
+     were rendering almost invisibly. */
+  color: var(--a-text);
+}
+
+.repeatItem > summary:hover {
+  background: #eaf6fd;
+}
+
+.repeatItem > summary::-webkit-details-marker {
+  display: none;
+}
+
+.repeatTitle {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  color: var(--a-text);
+  font-weight: 600;
+}
+
+/* An unnamed entry should read as a placeholder, not as broken text. */
+.repeatTitle:empty::before {
+  content: "Untitled";
+  color: var(--a-muted);
+  font-style: italic;
+}
+
+.repeatTools {
+  display: flex;
+  gap: 4px;
+  flex-shrink: 0;
+}
+
+.repeatBody {
+  padding: 4px 11px 12px;
+  background: var(--a-surface);
+  border-top: 1px solid var(--a-border);
+}
+
+.btnSm {
+  padding: 6px 12px;
+  font-size: 12.5px;
+}
+
+/* ---- preview ---- */
+.wsPreview {
+  background: #cbd5e1;
+  overflow: auto;
+  min-width: 0;
+  display: flex;
+  justify-content: center;
+  align-items: flex-start;
+  padding: 20px;
+}
+
+.wsPreviewStage {
+  /* The frame renders at its true CSS width so media queries behave, then is
+     scaled down visually to fit the pane. */
+  transform-origin: top center;
+}
+
+.previewFrame {
+  border: none;
+  border-radius: 10px;
+  background: #fff;
+  box-shadow: 0 12px 40px rgba(11, 37, 69, 0.28);
+  display: block;
+}
+
+@media (max-width: 1200px) {
+  .wsBody {
+    grid-template-columns: 1fr;
+  }
+
+  .wsPanel {
+    border-right: none;
+    border-bottom: 1px solid var(--a-border);
+    max-height: 60vh;
+  }
+
+  .workspace {
+    height: auto;
+  }
+}
+
+/* The workspace manages its own full-height layout, so the shell's padding
+   would only shrink the preview. */
+.main:has(.workspace) {
+  padding: 0;
+}
+
+/* ---------------- colour toolbar ---------------- */
+.colorBar {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  flex-wrap: wrap;
+  padding: 6px 8px;
+  border: 1px solid var(--a-border);
+  border-bottom: none;
+  border-radius: 8px 8px 0 0;
+  background: var(--a-bg);
+}
+
+.colorBar + .input,
+.colorBar + .textarea,
+.colorCustom + .input,
+.colorCustom + .textarea {
+  border-radius: 0 0 8px 8px;
+}
+
+.fmtBtn {
+  width: 26px;
+  height: 24px;
+  border: 1px solid var(--a-border);
+  border-radius: 5px;
+  background: #fff;
+  color: var(--a-text);
+  font-size: 12px;
+  line-height: 1;
+  cursor: pointer;
+}
+
+.fmtBtn:hover {
+  border-color: var(--a-accent);
+  color: var(--a-accent);
+}
+
+.fmtDivider {
+  width: 1px;
+  height: 18px;
+  background: var(--a-border);
+  margin: 0 2px;
+}
+
+.swatch {
+  width: 22px;
+  height: 22px;
+  border-radius: 5px;
+  border: 1px solid rgba(11, 37, 69, 0.2);
+  cursor: pointer;
+  padding: 0;
+}
+
+.swatch:hover {
+  outline: 2px solid var(--a-accent);
+  outline-offset: 1px;
+}
+
+.colorCustom {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 7px 8px;
+  border: 1px solid var(--a-border);
+  border-top: none;
+  border-bottom: none;
+  background: var(--a-bg);
+}
+
+.colorCustom input[type="color"] {
+  width: 34px;
+  height: 26px;
+  padding: 0;
+  border: 1px solid var(--a-border);
+  border-radius: 5px;
+  background: none;
+  cursor: pointer;
+}
+
+/* Panel flash when a preview click jumps you to a form. */
+@keyframes wsFlash {
+  0% { background: rgba(31, 169, 232, 0.16); }
+  100% { background: transparent; }
+}
+
+.wsForm.isFlash {
+  animation: wsFlash 0.9s ease-out;
+  border-radius: 8px;
+}
+
+/* ---------------- inline rich-text editor ---------------- */
+.rte {
+  width: 100%;
+  padding: 9px 11px;
+  border: 1px solid var(--a-border);
+  border-radius: 0 0 8px 8px;
+  font-size: 13.5px;
+  font-family: inherit;
+  line-height: 1.55;
+  color: var(--a-text);
+  background: #fff;
+  min-height: 38px;
+  outline: none;
+  transition: border-color 0.15s, box-shadow 0.15s;
+  /* Long words and pasted URLs must not widen the panel. */
+  overflow-wrap: anywhere;
+}
+
+.rteMulti {
+  min-height: 84px;
+}
+
+.rte:focus {
+  border-color: var(--a-accent);
+  box-shadow: 0 0 0 3px rgba(31, 169, 232, 0.15);
+}
+
+/* White text would vanish against the editor's white background, so show a
+   subtle checker behind coloured runs is overkill — instead outline them so
+   every run is locatable regardless of colour. */
+.rte [data-tone],
+.rte [data-color],
+.rte [data-grad] {
+  border-radius: 3px;
+  box-shadow: 0 0 0 1px rgba(11, 37, 69, 0.12);
+  padding: 0 1px;
+}
+
+.rte:empty::before {
+  content: attr(aria-label);
+  color: #9aa7b8;
+}
+
+/* Highlights the exact field a preview click landed on. */
+@keyframes fieldHit {
+  0% { box-shadow: 0 0 0 3px rgba(31, 169, 232, 0.45); }
+  100% { box-shadow: 0 0 0 3px rgba(31, 169, 232, 0); }
+}
+
+.fieldHit {
+  animation: fieldHit 1.2s ease-out;
+  border-radius: 8px;
+}
+
+/* ============================================================
+   SEO PANEL
+   ============================================================ */
+.seoPanel {
+  padding-bottom: 8px;
+}
+
+.seoHead h2 {
+  font-size: 15px;
+  font-weight: 800;
+}
+
+.seoHead p {
+  font-size: 12px;
+  color: var(--a-muted);
+  margin: 2px 0 16px;
+}
+
+.seoPreviewLabel {
+  font-size: 12px;
+  color: var(--a-muted);
+  margin-bottom: 6px;
+}
+
+.seoPreview {
+  border: 1px solid var(--a-border);
+  border-radius: 10px;
+  padding: 16px;
+  margin-bottom: 18px;
+  background: var(--a-surface);
+}
+
+.seoPreviewLogo {
+  height: 34px;
+  width: auto;
+  margin-bottom: 12px;
+  display: block;
+}
+
+.seoPreviewTitle {
+  color: #1a4fb4;
+  font-size: 16px;
+  line-height: 1.35;
+  margin-bottom: 5px;
+  /* Mirrors how a result is clipped in search listings. */
+  display: -webkit-box;
+  -webkit-line-clamp: 3;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+.seoPreviewDesc {
+  font-size: 12.5px;
+  color: #4b5563;
+  line-height: 1.5;
+  margin-bottom: 6px;
+  display: -webkit-box;
+  -webkit-line-clamp: 3;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+.seoPreviewUrl {
+  font-size: 12px;
+  color: #9aa7b8;
+  overflow-wrap: anywhere;
+}
+
+/* ---- accordion groups ---- */
+.seoGroup {
+  border-top: 1px solid var(--a-border);
+}
+
+.seoGroupHead {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+  padding: 13px 2px;
+  background: none;
+  border: none;
+  font-family: inherit;
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--a-text);
+  cursor: pointer;
+  text-align: left;
+}
+
+.seoChevron {
+  color: var(--a-muted);
+  font-size: 14px;
+  width: 12px;
+}
+
+.seoGroupTitle {
+  flex: 1;
+}
+
+.seoCount {
+  min-width: 22px;
+  height: 22px;
+  padding: 0 6px;
+  border-radius: 100px;
+  background: #fef3c7;
+  color: #92400e;
+  font-size: 11.5px;
+  font-weight: 700;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.seoCountClear {
+  background: #e8f5ec;
+  color: #17663a;
+}
+
+.seoGroupBody {
+  padding: 2px 2px 16px;
+}
+
+/* ---- advisory checks ---- */
+.checkList {
+  list-style: none;
+  margin: -6px 0 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+}
+
+.checkList li {
+  display: flex;
+  align-items: flex-start;
+  gap: 7px;
+  font-size: 12.5px;
+  line-height: 1.45;
+  color: var(--a-text);
+}
+
+.checkList li span {
+  flex-shrink: 0;
+  font-weight: 700;
+}
+
+.checkOk {
+  color: #17663a;
+}
+
+.checkWarn {
+  color: #92400e;
+}
+
+.seoImagePreview {
+  display: block;
+  width: 100%;
+  border-radius: 8px;
+  border: 1px solid var(--a-border);
+  margin-bottom: 14px;
+}
+
+/* Compact editor used inside list rows. */
+.rteCompact {
+  flex: 1;
+  min-width: 0;
+}
+
+.rteCompact .colorBar {
+  padding: 4px 6px;
+  gap: 4px;
+}
+
+.rteCompact .swatch {
+  width: 17px;
+  height: 17px;
+}
+
+.rteCompact .fmtBtn {
+  width: 22px;
+  height: 20px;
+  font-size: 11px;
+}
+
+.rteCompact .rte {
+  min-height: 32px;
+  padding: 6px 9px;
+}
+
+.listRow {
+  align-items: flex-start;
+}
+
+/* Shows the colour under the caret, with a one-click remove. */
+.activeColour {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 2px 4px 2px 5px;
+  border: 1px solid var(--a-border);
+  border-radius: 6px;
+  background: #fff;
+}
+
+.activeColourDot {
+  width: 14px;
+  height: 14px;
+  border-radius: 4px;
+  border: 1px solid rgba(11, 37, 69, 0.2);
+}
+
+.activeColour button {
+  border: none;
+  background: none;
+  padding: 0 2px;
+  font-size: 14px;
+  line-height: 1;
+  color: var(--a-muted);
+  cursor: pointer;
+}
+
+.activeColour button:hover {
+  color: var(--a-danger);
+}
+
+.fmtBtnWide {
+  width: auto;
+  padding: 0 8px;
+  font-size: 11px;
+  white-space: nowrap;
+}
+
+/* A white or near-white run is invisible on the editor's light background.
+   Give it a dark chip while editing — the published page is unaffected. */
+.rte [data-light="1"] {
+  background-color: var(--a-accent-ink);
+  border-radius: 3px;
+  padding: 1px 4px;
+  box-shadow: none;
+}
+
+/* ---------------- icon picker ---------------- */
+.iconGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(78px, 1fr));
+  gap: 6px;
+}
+
+.iconOption {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 5px;
+  padding: 9px 4px 7px;
+  border: 1px solid var(--a-border);
+  border-radius: 8px;
+  background: #fff;
+  cursor: pointer;
+  font-family: inherit;
+  transition: border-color 0.15s, background 0.15s;
+}
+
+.iconOption:hover {
+  border-color: var(--a-accent);
+}
+
+.iconOption.isSelected {
+  border-color: var(--a-accent);
+  background: #eaf6fd;
+  box-shadow: 0 0 0 1px var(--a-accent) inset;
+}
+
+/* Icons are authored for dark or light section backgrounds; the tinted tile
+   keeps every one of them visible in the picker. */
+.iconOptionArt {
+  width: 40px;
+  height: 40px;
+  display: grid;
+  place-items: center;
+  border-radius: 8px;
+  background: var(--a-accent-ink);
+  color: #8fd3f4;
+}
+
+.iconOptionArt svg {
+  width: 30px;
+  height: 30px;
+}
+
+.iconOptionName {
+  font-size: 10px;
+  color: var(--a-muted);
+  line-height: 1.2;
+  text-align: center;
+  overflow-wrap: anywhere;
+}
+
+.iconOption.isSelected .iconOptionName {
+  color: var(--a-text);
+  font-weight: 600;
+}
+
+/* ---------------- image field ---------------- */
+.imageField .subField {
+  display: block;
+  margin-bottom: 10px;
+}
+
+.imageField .subField > span {
+  display: block;
+  font-size: 12px;
+  font-weight: 600;
+  margin-bottom: 4px;
+  color: var(--a-text);
+}
+
+.imageField .subField small {
+  display: block;
+  font-weight: 400;
+  font-size: 11px;
+  color: var(--a-muted);
+  margin-top: 2px;
+}
+
+.imagePreview {
+  display: grid;
+  place-items: center;
+  min-height: 96px;
+  padding: 10px;
+  margin-bottom: 10px;
+  border: 1px dashed var(--a-border);
+  border-radius: 8px;
+  /* Chequerboard so transparent PNGs read correctly. */
+  background-image:
+    linear-gradient(45deg, #eef2f7 25%, transparent 25%),
+    linear-gradient(-45deg, #eef2f7 25%, transparent 25%),
+    linear-gradient(45deg, transparent 75%, #eef2f7 75%),
+    linear-gradient(-45deg, transparent 75%, #eef2f7 75%);
+  background-size: 14px 14px;
+  background-position: 0 0, 0 7px, 7px -7px, -7px 0;
+}
+
+.imagePreview img {
+  max-width: 100%;
+  max-height: 150px;
+  display: block;
+}
+
+.imagePreviewEmpty {
+  font-size: 12px;
+  color: var(--a-muted);
+}
+
+/* ---------------- collapsed icon picker ---------------- */
+.iconPicker {
+  position: relative;
+}
+
+.iconTrigger {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+  padding: 6px 10px 6px 6px;
+  border: 1px solid var(--a-border);
+  border-radius: 8px;
+  background: #fff;
+  cursor: pointer;
+  font-family: inherit;
+  text-align: left;
+  transition: border-color 0.15s;
+}
+
+.iconTrigger:hover {
+  border-color: var(--a-accent);
+}
+
+.iconTriggerName {
+  flex: 1;
+  font-size: 13px;
+  color: var(--a-text);
+  overflow-wrap: anywhere;
+}
+
+.iconTriggerCaret {
+  color: var(--a-muted);
+  font-size: 12px;
+}
+
+/* Floats above the form so opening it does not shove fields around. */
+.iconPicker .iconGrid {
+  position: absolute;
+  top: calc(100% + 5px);
+  left: 0;
+  right: 0;
+  z-index: 30;
+  max-height: 260px;
+  overflow-y: auto;
+  padding: 8px;
+  background: var(--a-surface);
+  border: 1px solid var(--a-border);
+  border-radius: 10px;
+  box-shadow: 0 14px 34px rgba(11, 37, 69, 0.18);
+}
+
+/* Marks the swatch matching the colour already applied at the caret, so an
+   author can see what is set without remembering. */
+.swatch.isActive {
+  outline: 2px solid var(--a-accent);
+  outline-offset: 2px;
+}
+
+.fmtBtn.isActive {
+  border-color: var(--a-accent);
+  color: var(--a-accent);
+  background: #eaf6fd;
+}
+
+/* Control labels state their colour rather than inheriting it. Inherited text
+   in this panel has proved fragile — every label that relied on it rendered
+   invisible — so anything text-bearing sets its own. */
+.checkRowLabel {
+  color: var(--a-text);
+  line-height: 1.45;
+}
+
+.checkRow {
+  color: var(--a-text);
+  align-items: flex-start;
+}
+
+.checkRow input[type="checkbox"] {
+  margin-top: 2px;
+  flex-shrink: 0;
+}
+
+/* Sidebar collapses above the content on narrow screens, where a fixed
+   264px rail would leave almost nothing for the editor. */
+@media (max-width: 860px) {
+  .shell {
+    grid-template-columns: 1fr;
+  }
+
+  .sidebar {
+    position: static;
+    height: auto;
+    padding: 12px;
+  }
+
+  .brand {
+    padding: 2px 6px 12px;
+  }
+
+  .brandLogo {
+    height: 32px;
+  }
+
+  .navRoot {
+    overflow: visible;
+  }
+
+  .sidebarFoot {
+    margin-top: 12px;
+  }
+}
+
+/* ============================================================
+   DASHBOARD
+   ============================================================ */
+.statGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  gap: 14px;
+  margin-bottom: 30px;
+}
+
+.statCard {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  padding: 18px 20px;
+  background: var(--a-surface);
+  border: 1px solid var(--a-border);
+  border-radius: 12px;
+}
+
+.statValue {
+  font-family: var(--font-montserrat), system-ui, sans-serif;
+  font-size: 28px;
+  font-weight: 800;
+  line-height: 1.1;
+  color: var(--a-text);
+}
+
+.statLabel {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--a-text);
+  margin-top: 4px;
+}
+
+.statHint {
+  font-size: 11.5px;
+  color: var(--a-muted);
+  line-height: 1.4;
+}
+
+/* A count of zero problems should read as reassurance, not as a warning. */
+.statCard.is-warn .statValue {
+  color: #b45309;
+}
+
+.statCard.is-ok .statValue {
+  color: #17663a;
+}
+
+.blockTitle {
+  font-size: 15px;
+  font-weight: 800;
+  color: var(--a-text);
+  margin: 0 0 14px;
+}
+
+.pageGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+  gap: 14px;
+}
+
+.pageCard {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding: 18px 20px;
+  background: var(--a-surface);
+  border: 1px solid var(--a-border);
+  border-radius: 12px;
+  text-decoration: none;
+  transition: border-color 0.15s, box-shadow 0.15s, transform 0.15s;
+}
+
+.pageCard:hover {
+  border-color: var(--a-accent);
+  box-shadow: 0 8px 22px rgba(11, 37, 69, 0.09);
+  transform: translateY(-2px);
+}
+
+.pageCardTop {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+}
+
+.pageCardName {
+  font-family: var(--font-montserrat), system-ui, sans-serif;
+  font-size: 16px;
+  font-weight: 700;
+  color: var(--a-text);
+}
+
+.pageCardPath {
+  font-size: 12px;
+  color: var(--a-muted);
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+}
+
+.pageCardDesc {
+  font-size: 12.5px;
+  color: var(--a-muted);
+  line-height: 1.5;
+  margin: 4px 0 0;
+  /* Descriptions run long; two lines is enough to recognise the page. */
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+.pageCardFoot {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  flex-wrap: wrap;
+  margin-top: 10px;
+  padding-top: 10px;
+  border-top: 1px solid var(--a-border);
+  font-size: 11.5px;
+  color: var(--a-muted);
+}
+
+.pageCardFlag {
+  color: #b45309;
+  font-weight: 600;
+}
+
+.emptyCard {
+  padding: 22px;
+  background: var(--a-surface);
+  border: 1px dashed var(--a-border);
+  border-radius: 12px;
+  color: var(--a-text);
+}
+
+.emptyCard p {
+  font-size: 13px;
+  color: var(--a-muted);
+  margin-top: 6px;
+  line-height: 1.55;
+}

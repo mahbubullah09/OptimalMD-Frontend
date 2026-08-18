@@ -1,0 +1,262 @@
+/* ============================================================
+   Footer — matches the reference design.
+
+   Flat navy panel, plain white column headings (not the gradient eyebrow
+   treatment used in page sections), chevron-prefixed links, and solid blue
+   contact badges.
+   ============================================================ */
+
+.footer {
+  background: var(--navy);
+  position: relative;
+  z-index: 1;
+  overflow: hidden;
+}
+
+.footWrap {
+  max-width: 1320px;
+  margin: 0 auto;
+  padding: 0 5vw;
+  position: relative;
+}
+
+/* ---------------- layout ---------------- */
+.footTop {
+  display: grid;
+  grid-template-columns: 1.5fr 1.15fr 1.05fr 0.95fr 1.15fr;
+  gap: 40px;
+  align-items: start;
+  padding: 58px 0 64px;
+}
+
+/* ---------------- brand column ---------------- */
+.ftLeft {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 22px;
+  max-width: 360px;
+}
+
+.logoImg {
+  height: 58px;
+  width: auto;
+  display: block;
+}
+
+.ftLeft p {
+  font-size: 15px;
+  color: #c9d6e5;
+  line-height: 1.65;
+  margin: 0;
+}
+
+.ftLeft p a {
+  color: var(--blue);
+  text-decoration: none;
+}
+
+.bbbImg {
+  width: 195px;
+  max-width: 100%;
+  height: auto;
+  border-radius: 4px;
+  display: block;
+}
+
+/* Plain monochrome marks, no surrounding chip. */
+.socials {
+  display: flex;
+  gap: 16px;
+}
+
+.socials a {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: opacity 0.18s;
+}
+
+.socials a svg {
+  width: 30px;
+  height: 30px;
+  stroke: #d7e2ee;
+  transition: stroke 0.18s;
+}
+
+.socials a:hover svg {
+  stroke: var(--blue);
+}
+
+/* ---------------- link columns ---------------- */
+.footCol h5 {
+  font-family: var(--font-head);
+  font-size: 19px;
+  font-weight: 600;
+  letter-spacing: -0.1px;
+  text-transform: none;
+  color: #ffffff;
+  margin: 0 0 18px;
+  /* Overrides the gradient-text treatment used by section eyebrows. */
+  background: none;
+  -webkit-background-clip: border-box;
+  background-clip: border-box;
+}
+
+/* A second heading inside one column (e.g. "Info" under "FAQ"). */
+.footCol h5.stacked {
+  margin-top: 34px;
+}
+
+.links {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.footCol a {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  font-size: 15px;
+  color: #e2e9f2;
+  text-decoration: none;
+  padding: 6px 0;
+  transition: color 0.18s;
+  line-height: 1.4;
+}
+
+.footCol a:hover {
+  color: var(--blue);
+}
+
+.linkChevron {
+  width: 12px;
+  height: 12px;
+  flex-shrink: 0;
+  /* Nudged down so the arrow sits on the text baseline, not its box top. */
+  margin-top: 4px;
+  stroke: #9fb4cc;
+  transition: stroke 0.18s;
+}
+
+.footCol a:hover .linkChevron {
+  stroke: var(--blue);
+}
+
+/* ---------------- contact column ---------------- */
+.contactItem {
+  display: flex;
+  gap: 13px;
+  margin-bottom: 26px;
+}
+
+.ci {
+  width: 34px;
+  height: 34px;
+  border-radius: 50%;
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--blue);
+  border: none;
+}
+
+.ci svg {
+  width: 16px;
+  height: 16px;
+  stroke: #ffffff;
+}
+
+.contactItem b {
+  font-family: var(--font-head);
+  font-size: 18px;
+  font-weight: 600;
+  color: #ffffff;
+  display: block;
+  margin-bottom: 6px;
+  line-height: 1.25;
+}
+
+.contactItem small {
+  font-size: 13px;
+  color: #c9d6e5;
+  line-height: 1.65;
+  display: block;
+}
+
+.contactItem small a {
+  color: inherit;
+  text-decoration: none;
+}
+
+.contactItem small a:hover {
+  color: #fff;
+}
+
+/* ---------------- legal bar ---------------- */
+.footBottom {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  flex-wrap: wrap;
+  border-top: 1px solid rgba(255, 255, 255, 0.08);
+  padding: 22px 0;
+  font-size: 12.5px;
+  color: #9fb4cc;
+}
+
+.fbLinks {
+  display: flex;
+  gap: 24px;
+}
+
+.fbLinks a {
+  color: #9fb4cc;
+  text-decoration: none;
+  transition: color 0.18s;
+  padding: 0;
+}
+
+.fbLinks a:hover {
+  color: #fff;
+}
+
+.notIns {
+  color: var(--blue);
+  font-weight: 600;
+}
+
+/* ---------------- responsive ---------------- */
+@media (max-width: 1100px) {
+  .footTop {
+    grid-template-columns: 1fr 1fr 1fr;
+    gap: 34px;
+  }
+
+  .ftLeft {
+    grid-column: 1 / -1;
+    max-width: 100%;
+  }
+}
+
+@media (max-width: 700px) {
+  .footTop {
+    grid-template-columns: 1fr 1fr;
+    gap: 28px;
+    padding: 44px 0 48px;
+  }
+}
+
+@media (max-width: 460px) {
+  .footTop {
+    grid-template-columns: 1fr;
+  }
+
+  .footBottom {
+    flex-direction: column;
+    text-align: center;
+  }
+}

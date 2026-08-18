@@ -1,0 +1,44 @@
+/* The preview frame renders marketing sections, not admin chrome, so undo the
+   admin shell's background and let the site's own styles take over. */
+body {
+  background: var(--navy);
+  color: var(--text);
+}
+
+/* Scroll-reveal would leave sections invisible inside the frame until they
+   intersect, which fights the "see it as you type" purpose. Show everything. */
+.reveal {
+  opacity: 1 !important;
+  transform: none !important;
+}
+
+/* Entrance animations replay on every keystroke otherwise, which reads as
+   flicker while typing. */
+.preview-static * {
+  animation: none !important;
+}
+
+/* Every section is clickable, so make that discoverable without making the
+   page look like an editor. */
+.previewSection {
+  position: relative;
+  cursor: pointer;
+}
+
+.previewSection::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  border: 2px solid transparent;
+  transition: border-color 0.15s, background 0.15s;
+}
+
+.previewSection:hover::after {
+  border-color: rgba(31, 169, 232, 0.55);
+  background: rgba(31, 169, 232, 0.05);
+}
+
+.previewSection.isFocused::after {
+  border-color: rgba(31, 169, 232, 0.9);
+}
