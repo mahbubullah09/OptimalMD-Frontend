@@ -459,11 +459,23 @@
 }
 
 .alert {
+  display: flex;
+  align-items: flex-start;
+  gap: 9px;
   padding: 10px 13px;
   border-radius: 8px;
   font-size: 13px;
   margin-bottom: 14px;
   line-height: 1.5;
+}
+
+.alert svg {
+  flex-shrink: 0;
+  width: 16px;
+  height: 16px;
+  margin-top: 1px;
+  stroke: currentColor;
+  fill: none;
 }
 
 .alertError {
@@ -485,38 +497,214 @@
 }
 
 /* ---------------- login ---------------- */
-.loginWrap {
+/* Two panels: brand on the left, form on the right. The split gives the page
+   a considered shape that a lone centred card does not, and keeps the form
+   itself narrow enough to read as one short task. */
+.login {
   min-height: 100vh;
   display: grid;
-  place-items: center;
-  padding: 24px;
-  background: linear-gradient(160deg, #0b2545 0%, #123056 100%);
+  grid-template-columns: 1.05fr 1fr;
+}
+
+.loginBrand {
+  display: flex;
+  align-items: center;
+  padding: 48px;
+  color: #e6eefb;
+  background:
+    radial-gradient(760px 420px at 12% 0%, rgba(31, 169, 232, 0.28), transparent 68%),
+    radial-gradient(620px 520px at 92% 100%, rgba(91, 168, 74, 0.18), transparent 70%),
+    linear-gradient(160deg, #0b2545 0%, #061525 100%);
+}
+
+.loginBrandInner {
+  width: 100%;
+  max-width: 440px;
+  margin-left: auto;
+  padding-right: 40px;
+}
+
+.loginLogo {
+  height: 38px;
+  width: auto;
+  display: block;
+  margin-bottom: 40px;
+}
+
+.loginBrand h1 {
+  font-size: 38px;
+  line-height: 1.15;
+  font-weight: 800;
+  letter-spacing: -0.9px;
+  color: #fff;
+  margin-bottom: 34px;
+}
+
+.loginPoints {
+  list-style: none;
+  display: grid;
+  gap: 18px;
+  margin-bottom: 40px;
+}
+
+.loginPoints li {
+  display: grid;
+  grid-template-columns: 22px 1fr;
+  gap: 12px;
+  align-items: start;
+}
+
+.loginPoints svg {
+  width: 22px;
+  height: 22px;
+  padding: 4px;
+  border-radius: 50%;
+  background: rgba(31, 169, 232, 0.18);
+  stroke: #6cc9f2;
+  stroke-width: 2.6;
+  fill: none;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+.loginPoints strong {
+  display: block;
+  font-size: 14px;
+  font-weight: 700;
+  color: #fff;
+  margin-bottom: 2px;
+}
+
+.loginPoints span {
+  font-size: 13px;
+  line-height: 1.55;
+  color: rgba(230, 238, 251, 0.62);
+}
+
+.loginLegal {
+  font-size: 12px;
+  color: rgba(230, 238, 251, 0.4);
+}
+
+.loginPanel {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 48px 40px;
+  background: var(--a-bg, #f6f8fb);
 }
 
 .loginCard {
   width: 100%;
-  max-width: 380px;
-  background: var(--a-surface);
-  border-radius: 14px;
-  padding: 30px 28px;
-  box-shadow: 0 24px 60px rgba(4, 14, 32, 0.4);
+  max-width: 372px;
 }
 
-.loginCard h1 {
-  font-size: 19px;
+.loginCard h2 {
+  font-size: 26px;
   font-weight: 800;
-  margin-bottom: 4px;
+  letter-spacing: -0.5px;
+  margin-bottom: 6px;
 }
 
 .loginCard .sub {
   color: var(--a-muted);
-  font-size: 13px;
-  margin-bottom: 22px;
+  font-size: 13.5px;
+  margin-bottom: 26px;
 }
 
-.loginCard .btn {
-  width: 100%;
-  margin-top: 4px;
+/* An icon docked at the left of an input, paired with .hasIcon. */
+.inputIcon {
+  position: absolute;
+  top: 50%;
+  left: 12px;
+  transform: translateY(-50%);
+  width: 17px;
+  height: 17px;
+  stroke: var(--a-muted);
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  fill: none;
+  pointer-events: none;
+}
+
+.input.hasIcon {
+  padding-left: 37px;
+}
+
+.fieldWarn {
+  display: block;
+  margin-top: 6px;
+  color: #92400e;
+  font-size: 12px;
+}
+
+.btnLg {
+  padding: 12px 18px;
+  font-size: 14.5px;
+}
+
+.spinner {
+  display: inline-block;
+  width: 14px;
+  height: 14px;
+  margin-right: 8px;
+  vertical-align: -2px;
+  border: 2px solid rgba(255, 255, 255, 0.45);
+  border-top-color: #fff;
+  border-radius: 50%;
+  animation: spin 0.7s linear infinite;
+}
+
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .spinner {
+    animation-duration: 2.4s;
+  }
+}
+
+/* Below the split, the brand panel becomes a header strip so the form stays
+   in view rather than being pushed off the bottom. */
+@media (max-width: 900px) {
+  .login {
+    grid-template-columns: 1fr;
+  }
+
+  .loginBrand {
+    padding: 28px 24px;
+  }
+
+  .loginBrandInner {
+    max-width: 520px;
+    margin: 0 auto;
+    padding-right: 0;
+  }
+
+  .loginLogo {
+    margin-bottom: 20px;
+  }
+
+  .loginBrand h1 {
+    font-size: 26px;
+    margin-bottom: 0;
+  }
+
+  .loginPoints,
+  .loginLegal {
+    display: none;
+  }
+
+  .loginPanel {
+    padding: 32px 24px 48px;
+  }
+
+  .loginCard {
+    max-width: 520px;
+  }
 }
 
 /* ---------------- responsive ---------------- */
@@ -1664,4 +1852,277 @@
   color: var(--a-muted);
   margin-top: 6px;
   line-height: 1.55;
+}
+
+/* ---------------- formatting popover ---------------- */
+.fmtPop {
+  position: relative;
+  display: inline-flex;
+}
+
+.fmtTrigger {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 2px;
+  width: 28px;
+  height: 26px;
+  padding: 0;
+}
+
+.fmtTrigger.isOpen {
+  border-color: var(--a-accent);
+  color: var(--a-accent);
+}
+
+.fmtTriggerGlyph {
+  font-size: 12px;
+  font-weight: 700;
+  line-height: 1;
+}
+
+/* Shows the applied colour without needing a swatch row in the toolbar. */
+.fmtTriggerBar {
+  width: 14px;
+  height: 3px;
+  border-radius: 2px;
+  border: 1px solid rgba(11, 37, 69, 0.15);
+}
+
+.fmtPanel {
+  position: absolute;
+  top: calc(100% + 6px);
+  left: 0;
+  z-index: 40;
+  width: 232px;
+  padding: 10px;
+  background: var(--a-surface);
+  border: 1px solid var(--a-border);
+  border-radius: 10px;
+  box-shadow: 0 14px 34px rgba(11, 37, 69, 0.18);
+}
+
+.fmtPanelLabel {
+  font-size: 10.5px;
+  font-weight: 700;
+  letter-spacing: 1px;
+  text-transform: uppercase;
+  color: var(--a-muted);
+  margin: 8px 0 5px;
+}
+
+.fmtPanelLabel:first-child {
+  margin-top: 0;
+}
+
+.fmtSwatches {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 5px;
+}
+
+.fmtCustomRow {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+}
+
+.fmtCustomRow input[type="color"] {
+  width: 30px;
+  height: 26px;
+  padding: 0;
+  border: 1px solid var(--a-border);
+  border-radius: 5px;
+  background: none;
+  cursor: pointer;
+  flex-shrink: 0;
+}
+
+.fmtCustomRow .mono {
+  font-size: 11px;
+  flex: 1;
+  min-width: 0;
+}
+
+.fmtSizes {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.fmtSize {
+  flex: 1;
+  height: 26px;
+  border: 1px solid var(--a-border);
+  border-radius: 6px;
+  background: #fff;
+  color: var(--a-text);
+  font-family: inherit;
+  font-size: 11.5px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.fmtSize:hover {
+  border-color: var(--a-accent);
+}
+
+.fmtSize.isActive {
+  background: #eaf6fd;
+  border-color: var(--a-accent);
+  color: var(--a-accent);
+}
+
+.fmtSizeInput {
+  width: 54px;
+  height: 26px;
+  padding: 0 6px;
+  border: 1px solid var(--a-border);
+  border-radius: 6px;
+  font-family: inherit;
+  font-size: 11.5px;
+  color: var(--a-text);
+}
+
+/* Says what the controls below will change. Sits at the top of the panel
+   because it governs every one of them. */
+.fmtScope {
+  margin: 0 0 10px;
+  padding: 6px 8px;
+  border-radius: 6px;
+  background: var(--a-surface-2, #f4f6f9);
+  color: var(--a-muted);
+  font-size: 11px;
+  line-height: 1.45;
+}
+
+.fmtScope.isField {
+  background: #eaf6fd;
+  color: #14618a;
+}
+
+/* Pressed state for the bold/italic buttons, so the toolbar reflects the
+   text under the caret rather than leaving it to be guessed. */
+.fmtBtn.isActive {
+  background: #eaf6fd;
+  border-color: var(--a-accent);
+  color: var(--a-accent);
+}
+
+/* Header of the size section: names the device being edited and carries the
+   relative/pixel switch, so the unit is never ambiguous. */
+.fmtSizeHead {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.fmtUnits {
+  display: inline-flex;
+  border: 1px solid var(--a-border);
+  border-radius: 6px;
+  overflow: hidden;
+}
+
+.fmtUnits button {
+  padding: 2px 8px;
+  border: 0;
+  background: #fff;
+  color: var(--a-muted);
+  font-family: inherit;
+  font-size: 10.5px;
+  font-weight: 600;
+  letter-spacing: 0.01em;
+  text-transform: none;
+  cursor: pointer;
+}
+
+.fmtUnits button + button {
+  border-left: 1px solid var(--a-border);
+}
+
+.fmtUnits button:hover {
+  color: var(--a-text);
+}
+
+.fmtUnits button.isActive {
+  background: #eaf6fd;
+  color: var(--a-accent);
+}
+
+.fmtUnitTag {
+  width: 14px;
+  color: var(--a-muted);
+  font-size: 11px;
+  text-align: center;
+}
+
+.fmtSizeNote {
+  margin: 6px 0 0;
+  color: var(--a-muted);
+  font-size: 11px;
+  line-height: 1.45;
+}
+
+/* A button that reads as a link — used for small inline actions inside help
+   text, where a real button would outweigh the sentence around it. */
+.linkBtn {
+  padding: 0;
+  border: 0;
+  background: none;
+  color: var(--a-accent);
+  font: inherit;
+  text-decoration: underline;
+  cursor: pointer;
+}
+
+.fmtClear {
+  width: 100%;
+  margin-top: 10px;
+}
+
+/* A control docked inside an input, e.g. the password reveal toggle. */
+.inputWithAction {
+  position: relative;
+  display: block;
+}
+
+.inputWithAction .input {
+  /* Room for the button so long passwords never slide underneath it. */
+  padding-right: 42px;
+}
+
+.inputAction {
+  position: absolute;
+  top: 50%;
+  right: 6px;
+  transform: translateY(-50%);
+  width: 30px;
+  height: 30px;
+  display: grid;
+  place-items: center;
+  border: none;
+  border-radius: 6px;
+  background: none;
+  color: var(--a-muted);
+  cursor: pointer;
+}
+
+.inputAction:hover:not(:disabled) {
+  color: var(--a-accent);
+  background: #eaf6fd;
+}
+
+.inputAction svg {
+  width: 17px;
+  height: 17px;
+  stroke: currentColor;
+  fill: none;
+}
+
+.loginCard .btn[type="submit"] {
+  width: 100%;
+  margin-top: 8px;
 }

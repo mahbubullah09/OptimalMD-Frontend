@@ -1,63 +1,48 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
+import type { ColorSpec, ResponsiveSize } from "@/lib/markerParser";
+import { usePreviewDevice } from "../DeviceContext";
+import ColorPopover from "./ColorPopover";
+import { restoreRange, selectionRange, type TextRange } from "./domOffsets";
 import {
-  type ColorSpec,
   htmlToMarker,
-  isHex,
+  mapRuns,
   markerToHtml,
-  specDataAttr,
-  specStyle,
+  runAt,
+  type Style,
+  summarise,
+  usedColors,
 } from "./markerHtml";
 
 /**
  * Inline editor for section copy.
  *
- * Text is shown in its real colour as you type, rather than as
- * `{{#1FA9E8|…}}` markers. Applying a colour to text that already has one
- * REPLACES it — the previous version nested markers, which is what made
- * re-colouring "totally messed up" — and there is an explicit control to
- * strip colour again.
+ * Text is shown in its real colour and size as you type, rather than as
+ * `{{#1FA9E8|…}}` markers.
  *
- * The element is uncontrolled on purpose: re-rendering a contentEditable on
- * every keystroke destroys the caret. It is seeded once and only re-seeded
- * when the value changes from outside (e.g. switching section).
+ * Formatting goes through the flat run model, not the contentEditable: a
+ * change is expressed as "apply this style to these character offsets", the
+ * marker is rewritten, and the DOM is rebuilt from it. That is what makes
+ * re-colouring replace rather than nest, and what lets a size be nudged
+ * repeatedly while focus sits in the number input — with a DOM Range, the
+ * first change detached the nodes the second one needed.
+ *
+ * Scope follows the selection, and falls back to the whole field:
+ *
+ *   text selected             -> just that text
+ *   caret inside a styled run -> that phrase
+ *   nothing selected          -> the entire field
+ *
+ * The last case is the important one. Changing a field's size should not
+ * require selecting all of it first, and a control that silently does nothing
+ * is worse than one that does the obvious thing.
+ *
+ * Typing is left to the browser and read back with `htmlToMarker`; only
+ * formatting round-trips through the model, so the caret survives normal use.
  */
 
-const SOLIDS = [
-  { label: "Brand blue", spec: { kind: "tone", tone: "blue" } as ColorSpec, swatch: "#1FA9E8" },
-  { label: "Brand green", spec: { kind: "tone", tone: "green" } as ColorSpec, swatch: "#5BA84A" },
-  { label: "Navy", spec: { kind: "solid", color: "#0B2545" } as ColorSpec, swatch: "#0B2545" },
-  { label: "White", spec: { kind: "solid", color: "#FFFFFF" } as ColorSpec, swatch: "#FFFFFF" },
-];
-
-const GRADIENTS: { label: string; spec: ColorSpec; css: string }[] = [
-  {
-    label: "Navy → Blue",
-    spec: { kind: "gradient", from: "#0B2545", to: "#1FA9E8", angle: 92 },
-    css: "linear-gradient(92deg,#0B2545,#1FA9E8)",
-  },
-  {
-    label: "Blue → Sky",
-    spec: { kind: "gradient", from: "#1FA9E8", to: "#7FD1F5", angle: 92 },
-    css: "linear-gradient(92deg,#1FA9E8,#7FD1F5)",
-  },
-  {
-    label: "Blue → Green",
-    spec: { kind: "gradient", from: "#1FA9E8", to: "#5BA84A", angle: 92 },
-    css: "linear-gradient(92deg,#1FA9E8,#5BA84A)",
-  },
-];
-
-const COLOURED = "[data-tone],[data-color],[data-grad]";
-
-/** Stable identity for a colour, so the toolbar can mark the active swatch. */
-const specKey = (spec: ColorSpec | null): string => {
-  if (!spec) return "";
-  if (spec.kind === "tone") return `tone:${spec.tone}`;
-  if (spec.kind === "solid") return `solid:${spec.color.toUpperCase()}`;
-  return `grad:${spec.from.toUpperCase()},${spec.to.toUpperCase()}`;
-};
+type Scope = "selection" | "phrase" | "field";
 
 export default function RichTextEditor({
   label,
@@ -78,65 +63,79 @@ export default function RichTextEditor({
   /** Renders without the label/wrapper, for use inside a list row. */
   compact?: boolean;
 }) {
+  const device = usePreviewDevice();
   const ref = useRef<HTMLDivElement>(null);
   const lastEmitted = useRef(value);
-  const [custom, setCustom] = useState("#1FA9E8");
-  const [customOpen, setCustomOpen] = useState(false);
-  /** The colour of the run the caret sits in, if any. */
-  const [activeSpec, setActiveSpec] = useState<ColorSpec | null>(null);
+  /**
+   * The selection as character offsets. Kept after blur on purpose: clicking
+   * into the size input clears the DOM selection, and without this the change
+   * would have nothing to apply to.
+   */
+  const [selection, setSelection] = useState<TextRange | null>(null);
 
   // Seed the editor, and re-seed only when the value changed elsewhere.
   useEffect(() => {
     const el = ref.current;
     if (!el) return;
     if (value === lastEmitted.current) return;
-    el.innerHTML = markerToHtml(value);
+    el.innerHTML = markerToHtml(value, device);
     lastEmitted.current = value;
-  }, [value]);
+  }, [value, device]);
+
+  // Switching the preview device re-renders the inline sizes so the editor
+  // shows what that device will show.
+  const seededFor = useRef(device);
+  useEffect(() => {
+    const el = ref.current;
+    if (!el || seededFor.current === device) return;
+    seededFor.current = device;
+    el.innerHTML = markerToHtml(lastEmitted.current, device);
+  }, [device]);
 
   useEffect(() => {
     const el = ref.current;
-    if (el && el.innerHTML === "") el.innerHTML = markerToHtml(value);
+    if (el && el.innerHTML === "") el.innerHTML = markerToHtml(value, device);
     // Seeding once on mount; `value` changes are handled above.
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  /**
-   * Reads the colour under the caret so the toolbar can show it with a remove
-   * control, rather than expecting an author to remember what they applied.
-   */
-  function syncActiveColour() {
+  /* ---------------------------------------------------------------- */
+  /* what the controls are pointed at                                  */
+  /* ---------------------------------------------------------------- */
+
+  const target = useMemo((): { range: TextRange; scope: Scope } | null => {
+    if (!selection) return null;
+    if (selection.start !== selection.end) return { range: selection, scope: "selection" };
+
+    // A caret inside styled text targets that phrase, so a colour or size can
+    // be changed without selecting the word again.
+    const run = runAt(value, selection.start);
+    if (run && (run.style.color || run.style.size)) {
+      return { range: { start: run.start, end: run.end }, scope: "phrase" };
+    }
+    return null;
+  }, [value, selection]);
+
+  const scope: Scope = target?.scope ?? "field";
+  const start = target?.range.start;
+  const end = target?.range.end;
+
+  const info = useMemo(
+    () => summarise(value, start === undefined || end === undefined ? undefined : { start, end }),
+    [value, start, end],
+  );
+
+  const usedSpecs = useMemo(() => usedColors(value), [value]);
+
+  /* ---------------------------------------------------------------- */
+  /* reading and writing                                               */
+  /* ---------------------------------------------------------------- */
+
+  function syncSelection() {
     const el = ref.current;
-    const selection = window.getSelection();
-    if (!el || !selection || selection.rangeCount === 0) return setActiveSpec(null);
-
-    const node = selection.getRangeAt(0).startContainer;
-    if (!el.contains(node)) return setActiveSpec(null);
-
-    const host = node.nodeType === Node.ELEMENT_NODE ? (node as HTMLElement) : node.parentElement;
-    const run = host?.closest(COLOURED) as HTMLElement | null;
-    if (!run) return setActiveSpec(null);
-
-    const grad = run.getAttribute("data-grad");
-    if (grad) {
-      const [from = "", to = ""] = grad.split(",");
-      setActiveSpec({ kind: "gradient", from, to, angle: 92 });
-      return;
-    }
-
-    const tone = run.getAttribute("data-tone");
-    if (tone === "blue" || tone === "green") {
-      setActiveSpec({ kind: "tone", tone });
-      return;
-    }
-
-    const color = run.getAttribute("data-color");
-    setActiveSpec(color ? { kind: "solid", color } : null);
-
-    // A colour outside the presets should still be visible in the picker.
-    if (color && !SOLIDS.some((s) => specKey(s.spec) === specKey({ kind: "solid", color }))) {
-      setCustom(color);
-    }
+    if (!el) return;
+    const range = selectionRange(el);
+    if (range) setSelection(range);
   }
 
   function emit() {
@@ -147,125 +146,38 @@ export default function RichTextEditor({
     onChange(marker);
   }
 
-  /** The selection, but only when it is inside this editor. */
-  function activeRange(): Range | null {
+  /** Rewrites the field, rebuilds the DOM, and keeps the selection put. */
+  function applyStyle(fn: (style: Style) => Style) {
     const el = ref.current;
-    const selection = window.getSelection();
-    if (!el || !selection || selection.rangeCount === 0) return null;
-    const range = selection.getRangeAt(0);
-    return el.contains(range.commonAncestorContainer) ? range : null;
-  }
+    const next = mapRuns(value, fn, target?.range);
+    if (next === value) return;
 
-  /** Removes colour wrappers inside a fragment, keeping their text. */
-  function unwrapColours(fragment: DocumentFragment) {
-    fragment.querySelectorAll(COLOURED).forEach((span) => {
-      const parent = span.parentNode;
-      if (!parent) return;
-      while (span.firstChild) parent.insertBefore(span.firstChild, span);
-      parent.removeChild(span);
-    });
-  }
-
-  /**
-   * If the caret sits inside a coloured run with nothing selected, treat that
-   * whole run as the target — otherwise clicking a swatch would do nothing
-   * useful, and clearing would be impossible without re-selecting by hand.
-   */
-  function rangeForOperation(): Range | null {
-    const range = activeRange();
-    if (!range) return null;
-    if (!range.collapsed) return range;
-
-    const node =
-      range.startContainer.nodeType === Node.ELEMENT_NODE
-        ? (range.startContainer as HTMLElement)
-        : range.startContainer.parentElement;
-    const run = node?.closest(COLOURED);
-    if (!run) return null;
-
-    const whole = document.createRange();
-    whole.selectNode(run);
-    return whole;
-  }
-
-  function applyColour(spec: ColorSpec) {
-    const range = rangeForOperation();
-    if (!range) return;
-
-    const fragment = range.extractContents();
-    // Replace rather than nest.
-    unwrapColours(fragment);
-
-    const span = document.createElement("span");
-    span.setAttribute("style", specStyle(spec));
-    const attr = specDataAttr(spec);
-    span.setAttribute(attr.name, attr.value);
-    span.appendChild(fragment);
-
-    range.insertNode(span);
-
-    // The new span can land inside an older coloured one; re-serialising
-    // through the flat run model collapses that so the innermost colour wins
-    // and no nested marker is ever stored.
-    normalise();
-
-  }
-
-  function clearColour() {
-    const range = rangeForOperation();
-    if (!range) return;
-
-    const fragment = range.extractContents();
-    unwrapColours(fragment);
-
-    // Mark the plain text so the caret can be restored after re-rendering.
-    const marker = document.createElement("span");
-    marker.setAttribute("data-caret", "");
-    marker.appendChild(fragment);
-    range.insertNode(marker);
-
-    normalise();
-  }
-
-  /**
-   * Rewrites the editor from its own serialised output.
-   *
-   * Round-tripping through the flat run model is what guarantees the DOM can
-   * never keep a nested colour: whatever shape editing produced, this rebuilds
-   * it as a flat sequence of runs.
-   */
-  function normalise() {
-    const el = ref.current;
-    if (!el) return;
-
-    const marker = htmlToMarker(el);
-    el.innerHTML = markerToHtml(marker);
-    lastEmitted.current = marker;
-    onChange(marker);
-    requestAnimationFrame(syncActiveColour);
-  }
-
-  function wrapInline(tag: "strong" | "em") {
-    const range = activeRange();
-    if (!range || range.collapsed) return;
-
-    const fragment = range.extractContents();
-    // Toggle off if the selection is already entirely that tag.
-    const existing = fragment.querySelector(tag);
-    if (existing && fragment.childNodes.length === 1) {
-      while (existing.firstChild) fragment.insertBefore(existing.firstChild, existing);
-      fragment.removeChild(existing);
-      range.insertNode(fragment);
-    } else {
-      const el = document.createElement(tag);
-      el.appendChild(fragment);
-      range.insertNode(el);
+    lastEmitted.current = next;
+    if (el) {
+      const focused = el === document.activeElement || el.contains(document.activeElement);
+      el.innerHTML = markerToHtml(next, device);
+      // Only take the caret back if it was ours; otherwise the author is in
+      // the size input and stealing focus would end their edit.
+      if (focused && selection) restoreRange(el, selection);
     }
-    emit();
+    onChange(next);
   }
 
-  const activeKey = specKey(activeSpec);
-  const customIsActive = activeKey === specKey({ kind: "solid", color: custom });
+  const applyColour = (spec: ColorSpec) => applyStyle((style) => ({ ...style, color: spec }));
+
+  const applySize = (size: ResponsiveSize) =>
+    applyStyle((style) => ({
+      ...style,
+      size: Object.keys(size).length > 0 ? size : undefined,
+    }));
+
+  const clearFormatting = () =>
+    applyStyle((style) => ({ ...style, color: undefined, size: undefined }));
+
+  const toggleEmphasis = (key: "bold" | "italic") => {
+    const on = !info[key];
+    applyStyle((style) => ({ ...style, [key]: on || undefined }));
+  };
 
   return (
     <div className={compact ? "rteCompact" : "field"} data-field-path={path}>
@@ -277,118 +189,41 @@ export default function RichTextEditor({
       )}
 
       <div className="colorBar">
-        <button type="button" className="fmtBtn" title="Bold" onClick={() => wrapInline("strong")}>
+        <button
+          type="button"
+          className={`fmtBtn${info.bold ? " isActive" : ""}`}
+          title="Bold"
+          aria-pressed={info.bold}
+          onMouseDown={(e) => e.preventDefault()}
+          onClick={() => toggleEmphasis("bold")}
+        >
           <b>B</b>
         </button>
-        <button type="button" className="fmtBtn" title="Italic" onClick={() => wrapInline("em")}>
+        <button
+          type="button"
+          className={`fmtBtn${info.italic ? " isActive" : ""}`}
+          title="Italic"
+          aria-pressed={info.italic}
+          onMouseDown={(e) => e.preventDefault()}
+          onClick={() => toggleEmphasis("italic")}
+        >
           <i>I</i>
         </button>
 
         <span className="fmtDivider" />
 
-        {SOLIDS.map((solid) => {
-          const on = specKey(solid.spec) === activeKey;
-          return (
-            <button
-              key={solid.label}
-              type="button"
-              className={`swatch${on ? " isActive" : ""}`}
-              style={{ background: solid.swatch }}
-              title={on ? `${solid.label} (applied)` : solid.label}
-              aria-label={solid.label}
-              aria-pressed={on}
-              onMouseDown={(e) => e.preventDefault()}
-              onClick={() => applyColour(solid.spec)}
-            />
-          );
-        })}
-
-        {GRADIENTS.map((grad) => {
-          const on = specKey(grad.spec) === activeKey;
-          return (
-            <button
-              key={grad.label}
-              type="button"
-              className={`swatch${on ? " isActive" : ""}`}
-              style={{ background: grad.css }}
-              title={on ? `${grad.label} (applied)` : grad.label}
-              aria-label={grad.label}
-              aria-pressed={on}
-              onMouseDown={(e) => e.preventDefault()}
-              onClick={() => applyColour(grad.spec)}
-            />
-          );
-        })}
-
-        <span className="fmtDivider" />
-
-        <button
-          type="button"
-          className={`fmtBtn${customIsActive ? " isActive" : ""}`}
-          title={customIsActive ? `Custom colour ${custom} (applied)` : "Custom colour"}
-          aria-pressed={customIsActive}
-          onMouseDown={(e) => e.preventDefault()}
-          onClick={() => setCustomOpen((v) => !v)}
-        >
-          +
-        </button>
-        {activeSpec ? (
-          <span className="activeColour" title="Colour applied here">
-            <span
-              className="activeColourDot"
-              style={{
-                background:
-                  activeSpec.kind === "gradient"
-                    ? `linear-gradient(92deg, ${activeSpec.from}, ${activeSpec.to})`
-                    : activeSpec.kind === "tone"
-                      ? activeSpec.tone === "blue"
-                        ? "#1FA9E8"
-                        : "#5BA84A"
-                      : activeSpec.color,
-              }}
-            />
-            <button
-              type="button"
-              aria-label="Remove this colour"
-              title="Remove this colour"
-              onMouseDown={(e) => e.preventDefault()}
-              onClick={clearColour}
-            >
-              ×
-            </button>
-          </span>
-        ) : (
-          <button
-            type="button"
-            className="fmtBtn fmtBtnWide"
-            title="Remove colour from the selection"
-            onMouseDown={(e) => e.preventDefault()}
-            onClick={clearColour}
-          >
-            No colour
-          </button>
-        )}
+        <ColorPopover
+          activeSpec={info.color}
+          activeSize={info.size}
+          sizeMixed={info.sizeMixed}
+          scope={scope}
+          device={device}
+          usedSpecs={usedSpecs}
+          onPick={applyColour}
+          onClear={clearFormatting}
+          onSize={applySize}
+        />
       </div>
-
-      {customOpen ? (
-        <div className="colorCustom">
-          <input
-            type="color"
-            value={custom}
-            onChange={(e) => setCustom(e.target.value)}
-            aria-label="Pick a colour"
-          />
-          <code className="mono">{custom}</code>
-          <button
-            type="button"
-            className="btn btnGhost btnSm"
-            onMouseDown={(e) => e.preventDefault()}
-            onClick={() => isHex(custom) && applyColour({ kind: "solid", color: custom })}
-          >
-            Apply
-          </button>
-        </div>
-      ) : null}
 
       <div
         ref={ref}
@@ -400,12 +235,12 @@ export default function RichTextEditor({
         aria-label={label}
         onInput={() => {
           emit();
-          syncActiveColour();
+          syncSelection();
         }}
         onBlur={emit}
-        onKeyUp={syncActiveColour}
-        onMouseUp={syncActiveColour}
-        onFocus={syncActiveColour}
+        onKeyUp={syncSelection}
+        onMouseUp={syncSelection}
+        onFocus={syncSelection}
         onKeyDown={(e) => {
           // Single-line fields should not gain line breaks.
           if (e.key === "Enter" && !multiline) e.preventDefault();

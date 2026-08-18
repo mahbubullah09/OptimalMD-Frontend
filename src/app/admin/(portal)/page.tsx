@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { getCurrentAdmin, getSessionToken } from "@/lib/adminSession";
+import { ApiRequestError } from "@/lib/api";
 import { listPages } from "@/lib/content";
 import { withSeoDefaults } from "@/lib/content.types";
 
@@ -16,8 +17,14 @@ export default async function DashboardPage() {
 
   try {
     pages = await listPages(token ?? "");
-  } catch {
-    error = "Could not load pages. Is the content API running on port 4000?";
+  } catch (err) {
+    // Report what the API actually said. The old message named a local port,
+    // which is misleading once this points at a deployed backend — and the
+    // backend now names the environment variables it is missing.
+    error =
+      err instanceof ApiRequestError
+        ? `Could not load pages: ${err.message}`
+        : "Could not load pages. The content API did not respond.";
   }
 
   /**

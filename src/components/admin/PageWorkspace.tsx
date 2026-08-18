@@ -1,8 +1,14 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { saveSection, saveSeo } from "@/app/admin/(portal)/pages/[slug]/actions";
-import { PREVIEW_MESSAGE, PREVIEW_SELECT } from "@/app/admin/preview/[slug]/PreviewCanvas";
+import {
+  saveSection,
+  saveSeo,
+} from "@/app/admin/(portal)/pages/[slug]/actions";
+import {
+  PREVIEW_MESSAGE,
+  PREVIEW_SELECT,
+} from "@/app/admin/preview/[slug]/PreviewCanvas";
 import {
   type PageDocument,
   type PageSection,
@@ -10,6 +16,7 @@ import {
   SECTION_LABELS,
   withSeoDefaults,
 } from "@/lib/content.types";
+import { DeviceProvider } from "./DeviceContext";
 import SectionFormFor from "./sections/SectionFormFor";
 import SeoPanel from "./sections/SeoPanel";
 
@@ -28,7 +35,9 @@ export default function PageWorkspace({ page }: { page: PageDocument }) {
     [...page.sections].sort((a, b) => a.order - b.order),
   );
   const [seo, setSeo] = useState<PageSeo>(() => withSeoDefaults(page.seo));
-  const [activeKey, setActiveKey] = useState<string>(() => page.sections[0]?.key ?? "");
+  const [activeKey, setActiveKey] = useState<string>(
+    () => page.sections[0]?.key ?? "",
+  );
   const [tab, setTab] = useState<"content" | "seo">("content");
   const [device, setDevice] = useState<DeviceKey>("desktop");
   const [status, setStatus] = useState<Status>(null);
@@ -58,7 +67,11 @@ export default function PageWorkspace({ page }: { page: PageDocument }) {
   useEffect(() => {
     function onMessage(event: MessageEvent) {
       if (event.origin !== window.location.origin) return;
-      const data = event.data as { type?: string; key?: string; field?: string | null } | null;
+      const data = event.data as {
+        type?: string;
+        key?: string;
+        field?: string | null;
+      } | null;
       if (!data) return;
 
       if (data.type === `${PREVIEW_MESSAGE}:ready`) {
@@ -97,13 +110,21 @@ export default function PageWorkspace({ page }: { page: PageDocument }) {
             requestAnimationFrame(() => {
               target.scrollIntoView({ behavior: "smooth", block: "center" });
               target.classList.add("fieldHit");
-              window.setTimeout(() => target.classList.remove("fieldHit"), 1200);
+              window.setTimeout(
+                () => target.classList.remove("fieldHit"),
+                1200,
+              );
               target
-                .querySelector<HTMLElement>("input, textarea, [contenteditable]")
+                .querySelector<HTMLElement>(
+                  "input, textarea, [contenteditable]",
+                )
                 ?.focus({ preventScroll: true });
             });
           } else {
-            formRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
+            formRef.current?.scrollIntoView({
+              behavior: "smooth",
+              block: "start",
+            });
           }
         });
       }
@@ -150,7 +171,11 @@ export default function PageWorkspace({ page }: { page: PageDocument }) {
     pushToPreview(sections, key);
   }
 
-  function report(result: { ok: boolean; revalidated?: boolean; error?: string }) {
+  function report(result: {
+    ok: boolean;
+    revalidated?: boolean;
+    error?: string;
+  }) {
     if (!result.ok) {
       setStatus({ kind: "error", message: result.error ?? "Could not save" });
       return false;
@@ -160,7 +185,8 @@ export default function PageWorkspace({ page }: { page: PageDocument }) {
         ? { kind: "ok", message: "Saved. The live page is updating." }
         : {
             kind: "warn",
-            message: "Saved, but the live page could not be refreshed automatically.",
+            message:
+              "Saved, but the live page could not be refreshed automatically.",
           },
     );
     return true;
@@ -169,7 +195,12 @@ export default function PageWorkspace({ page }: { page: PageDocument }) {
   async function saveActiveSection() {
     if (!active) return;
     setPending(true);
-    const result = await saveSection(page.slug, active.key, active.data, active.enabled);
+    const result = await saveSection(
+      page.slug,
+      active.key,
+      active.data,
+      active.enabled,
+    );
     if (report(result)) {
       setDirty((prev) => {
         const next = new Set(prev);
@@ -188,7 +219,12 @@ export default function PageWorkspace({ page }: { page: PageDocument }) {
     for (const key of dirty) {
       const section = sections.find((s) => s.key === key);
       if (!section) continue;
-      const result = await saveSection(page.slug, key, section.data, section.enabled);
+      const result = await saveSection(
+        page.slug,
+        key,
+        section.data,
+        section.enabled,
+      );
       if (!result.ok) {
         failure = result.error;
         break;
@@ -234,7 +270,9 @@ export default function PageWorkspace({ page }: { page: PageDocument }) {
           <h1>{page.name}</h1>
           <p>
             /{page.slug === "home" ? "" : page.slug}
-            {dirty.size > 0 ? ` · ${dirty.size} unsaved change${dirty.size === 1 ? "" : "s"}` : ""}
+            {dirty.size > 0
+              ? ` · ${dirty.size} unsaved change${dirty.size === 1 ? "" : "s"}`
+              : ""}
           </p>
         </div>
 
@@ -261,118 +299,143 @@ export default function PageWorkspace({ page }: { page: PageDocument }) {
             onClick={saveAll}
             disabled={pending || dirty.size === 0}
           >
-            {pending ? "Saving…" : `Publish${dirty.size ? ` (${dirty.size})` : ""}`}
+            {pending
+              ? "Saving…"
+              : `Publish${dirty.size ? ` (${dirty.size})` : ""}`}
           </button>
         </div>
       </header>
 
-      <div className="wsBody">
-        <aside className="wsPanel">
-          <div className="segmented segmentedWide" role="group" aria-label="Editor mode">
-            <button type="button" aria-pressed={tab === "content"} onClick={() => setTab("content")}>
-              Content
-            </button>
-            <button type="button" aria-pressed={tab === "seo"} onClick={() => setTab("seo")}>
-              SEO
-            </button>
-          </div>
-
-          {status ? (
+      {/* The device switch above drives text-size editing as well as the frame
+          width, so a size chosen while looking at Tablet lands on tablet. */}
+      <DeviceProvider value={device}>
+        <div className="wsBody">
+          <aside className="wsPanel">
             <div
-              className={`alert alert${status.kind === "error" ? "Error" : status.kind === "ok" ? "Ok" : "Warn"}`}
-              role="status"
+              className="segmented segmentedWide"
+              role="group"
+              aria-label="Editor mode"
             >
-              {status.message}
+              <button
+                type="button"
+                aria-pressed={tab === "content"}
+                onClick={() => setTab("content")}
+              >
+                Content
+              </button>
+              <button
+                type="button"
+                aria-pressed={tab === "seo"}
+                onClick={() => setTab("seo")}
+              >
+                SEO
+              </button>
             </div>
-          ) : null}
 
-          {tab === "content" ? (
-            <>
-              <nav className="sectionNav">
-                {sections.map((section) => (
-                  <button
-                    key={section.key}
-                    type="button"
-                    className={`sectionNavItem${section.key === activeKey ? " active" : ""}`}
-                    onClick={() => selectSection(section.key)}
-                  >
-                    <span>
-                      {SECTION_LABELS[section.type] ?? section.type}
-                      {dirty.has(section.key) ? <b className="dot" aria-label="unsaved" /> : null}
-                    </span>
-                    {!section.enabled ? <em>hidden</em> : null}
-                  </button>
-                ))}
-              </nav>
+            {status ? (
+              <div
+                className={`alert alert${status.kind === "error" ? "Error" : status.kind === "ok" ? "Ok" : "Warn"}`}
+                role="status"
+              >
+                {status.message}
+              </div>
+            ) : null}
 
-              {active ? (
-                <div className={`wsForm${flash ? " isFlash" : ""}`} ref={formRef}>
-                  <div className="wsFormHead">
-                    <h2>{SECTION_LABELS[active.type] ?? active.type}</h2>
-                    <label className="switch">
-                      <input
-                        type="checkbox"
-                        checked={active.enabled}
-                        onChange={(e) => toggleSection(active.key, e.target.checked)}
-                      />
-                      Visible
-                    </label>
-                  </div>
-
-                  <SectionFormFor
-                    section={active}
-                    onChange={(data) => updateSectionData(active.key, data)}
-                  />
-
-                  <div className="wsFormFoot">
+            {tab === "content" ? (
+              <>
+                <nav className="sectionNav">
+                  {sections.map((section) => (
                     <button
-                      className="btn btnPrimary"
+                      key={section.key}
                       type="button"
-                      onClick={saveActiveSection}
-                      disabled={pending || !dirty.has(active.key)}
+                      className={`sectionNavItem${section.key === activeKey ? " active" : ""}`}
+                      onClick={() => selectSection(section.key)}
                     >
-                      {pending ? "Saving…" : "Save this section"}
+                      <span>
+                        {SECTION_LABELS[section.type] ?? section.type}
+                        {dirty.has(section.key) ? (
+                          <b className="dot" aria-label="unsaved" />
+                        ) : null}
+                      </span>
+                      {!section.enabled ? <em>hidden</em> : null}
                     </button>
+                  ))}
+                </nav>
+
+                {active ? (
+                  <div
+                    className={`wsForm${flash ? " isFlash" : ""}`}
+                    ref={formRef}
+                  >
+                    <div className="wsFormHead">
+                      <h2>{SECTION_LABELS[active.type] ?? active.type}</h2>
+                      <label className="switch">
+                        <input
+                          type="checkbox"
+                          checked={active.enabled}
+                          onChange={(e) =>
+                            toggleSection(active.key, e.target.checked)
+                          }
+                        />
+                        Visible
+                      </label>
+                    </div>
+
+                    <SectionFormFor
+                      section={active}
+                      onChange={(data) => updateSectionData(active.key, data)}
+                    />
+
+                    <div className="wsFormFoot">
+                      <button
+                        className="btn btnPrimary"
+                        type="button"
+                        onClick={saveActiveSection}
+                        disabled={pending || !dirty.has(active.key)}
+                      >
+                        {pending ? "Saving…" : "Save this section"}
+                      </button>
+                    </div>
                   </div>
+                ) : null}
+              </>
+            ) : (
+              <div className="wsForm">
+                <SeoPanel seo={seo} slug={page.slug} onChange={setSeo} />
+                <div className="wsFormFoot">
+                  <button
+                    className="btn btnPrimary"
+                    type="button"
+                    onClick={persistSeo}
+                    disabled={pending}
+                  >
+                    {pending ? "Saving…" : "Save SEO"}
+                  </button>
                 </div>
-              ) : null}
-            </>
-          ) : (
-            <div className="wsForm">
-              <SeoPanel seo={seo} slug={page.slug} onChange={setSeo} />
-              <div className="wsFormFoot">
-                <button
-                  className="btn btnPrimary"
-                  type="button"
-                  onClick={persistSeo}
-                  disabled={pending}
-                >
-                  {pending ? "Saving…" : "Save SEO"}
-                </button>
+              </div>
+            )}
+          </aside>
+
+          <section className="wsPreview" ref={paneRef}>
+            {/* Outer box reserves the scaled-down footprint so the pane scrolls
+              correctly; the inner stage does the visual scaling. */}
+            <div style={{ width: width * scale, height: 900 * scale }}>
+              <div
+                className="wsPreviewStage"
+                style={{ transform: `scale(${scale})`, width, height: 900 }}
+              >
+                <iframe
+                  ref={frameRef}
+                  title="Live preview"
+                  src={`/admin/preview/${page.slug}`}
+                  style={{ width, height: 900 }}
+                  className="previewFrame"
+                />
               </div>
             </div>
-          )}
-        </aside>
-
-        <section className="wsPreview" ref={paneRef}>
-          {/* Outer box reserves the scaled-down footprint so the pane scrolls
-              correctly; the inner stage does the visual scaling. */}
-          <div style={{ width: width * scale, height: 900 * scale }}>
-            <div
-              className="wsPreviewStage"
-              style={{ transform: `scale(${scale})`, width, height: 900 }}
-            >
-              <iframe
-                ref={frameRef}
-                title="Live preview"
-                src={`/admin/preview/${page.slug}`}
-                style={{ width, height: 900 }}
-                className="previewFrame"
-              />
-            </div>
-          </div>
-        </section>
-      </div>
+          </section>
+        </div>
+      </DeviceProvider>
     </div>
   );
 }

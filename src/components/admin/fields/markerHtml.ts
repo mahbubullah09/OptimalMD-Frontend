@@ -13,15 +13,20 @@
  */
 
 import {
+  type Breakpoint,
   type ColorSpec,
   isHex,
   type MarkerNode,
   parseMarkers,
+  parseSizeHead,
+  type ResponsiveSize,
+  sizeToMarker,
+  sizeToVars,
   specToMarker,
 } from "@/lib/markerParser";
 
 export { isHex };
-export type { ColorSpec };
+export type { Breakpoint, ColorSpec, ResponsiveSize };
 
 /**
  * Relative luminance of a hex colour, 0 (black) to 1 (white).
@@ -53,8 +58,8 @@ export function isLightSpec(spec: ColorSpec): boolean {
 const escapeHtml = (text: string) =>
   text.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
 
-type Style = { color?: ColorSpec; bold?: boolean; italic?: boolean };
-type Run = { text: string; style: Style };
+export type Style = { color?: ColorSpec; size?: ResponsiveSize; bold?: boolean; italic?: boolean };
+export type Run = { text: string; style: Style };
 
 /** Inline styles that make a run look right inside the editor. */
 export function specStyle(spec: ColorSpec): string {
@@ -70,6 +75,22 @@ export function specStyle(spec: ColorSpec): string {
   ].join(";");
 }
 
+/**
+ * Inline style for a sized run inside the editor.
+ *
+ * The custom properties are what the published page uses; the plain
+ * `font-size` is added so the left-hand editor — which is not inside a
+ * device-width frame and so never trips the media queries — still previews
+ * the size for the device being targeted.
+ */
+export function sizeCss(size: ResponsiveSize, device: Breakpoint = "desktop"): string {
+  const vars = sizeToVars(size);
+  const shown = size[device] ?? size.desktop ?? size.tablet ?? size.mobile;
+  const decls = Object.entries(vars).map(([k, v]) => `${k}:${v}`);
+  if (shown) decls.push(`font-size:${shown.value}${shown.unit}`);
+  return decls.join(";");
+}
+
 /** Data attribute pair that lets serialisation recover the colour. */
 export function specDataAttr(spec: ColorSpec): { name: string; value: string } {
   if (spec.kind === "tone") return { name: "data-tone", value: spec.tone };
@@ -82,8 +103,15 @@ const sameColor = (a?: ColorSpec, b?: ColorSpec) => {
   return specToMarker(a) === specToMarker(b);
 };
 
+/** Two sizes match when they serialise identically, breakpoints included. */
+const sameSize = (a?: ResponsiveSize, b?: ResponsiveSize) =>
+  (a ? sizeToMarker(a) : "") === (b ? sizeToMarker(b) : "");
+
 const sameStyle = (a: Style, b: Style) =>
-  sameColor(a.color, b.color) && !!a.bold === !!b.bold && !!a.italic === !!b.italic;
+  sameColor(a.color, b.color) &&
+  sameSize(a.size, b.size) &&
+  !!a.bold === !!b.bold &&
+  !!a.italic === !!b.italic;
 
 /* ------------------------------------------------------------------ */
 /* marker  ->  runs                                                    */
@@ -112,13 +140,17 @@ function flatten(nodes: MarkerNode[], inherited: Style = {}): Run[] {
           ...flatten(node.children, node.spec ? { ...inherited, color: node.spec } : inherited),
         );
         break;
+      case "size":
+        // Innermost size wins, exactly as colour does.
+        runs.push(...flatten(node.children, { ...inherited, size: node.size }));
+        break;
     }
   }
 
   return runs;
 }
 
-const parseRuns = (input: string): Run[] => flatten(parseMarkers(input));
+export const parseRuns = (input: string): Run[] => flatten(parseMarkers(input));
 
 /* ------------------------------------------------------------------ */
 /* runs  ->  marker / html                                             */
@@ -146,17 +178,27 @@ export function runsToMarker(runs: Run[]): string {
       let body = text;
       if (style.bold) body = `**${body}**`;
       else if (style.italic) body = `*${body}*`;
+      // Size sits inside the colour marker; the parser nests, so both apply.
+      const size = style.size ? sizeToMarker(style.size) : "";
+      if (size) body = `{{${size}|${body}}}`;
       return style.color ? `{{${specToMarker(style.color)}|${body}}}` : body;
     })
     .join("");
 }
 
-export function runsToHtml(runs: Run[]): string {
+export function runsToHtml(runs: Run[], device: Breakpoint = "desktop"): string {
   return mergeRuns(runs)
     .map(({ text, style }) => {
       let inner = escapeHtml(text).replace(/\n/g, "<br>");
       if (style.bold) inner = `<strong>${inner}</strong>`;
       if (style.italic) inner = `<em>${inner}</em>`;
+      const size = style.size ? sizeToMarker(style.size) : "";
+      if (size) {
+        // `data-size` carries the marker head verbatim so every breakpoint
+        // survives the round trip; the inline font-size is what the author
+        // sees in the editor, and follows the device they are targeting.
+        inner = `<span class="rt-size" data-size="${escapeHtml(size)}" style="${sizeCss(style.size as ResponsiveSize, device)}">${inner}</span>`;
+      }
       if (!style.color) return inner;
 
       const attr = specDataAttr(style.color);
@@ -168,8 +210,9 @@ export function runsToHtml(runs: Run[]): string {
     .join("");
 }
 
-/** Marker text -> editor HTML. */
-export const markerToHtml = (input: string): string => runsToHtml(parseRuns(input));
+/** Marker text -> editor HTML, sized for the device being previewed. */
+export const markerToHtml = (input: string, device: Breakpoint = "desktop"): string =>
+  runsToHtml(parseRuns(input), device);
 
 /* ------------------------------------------------------------------ */
 /* html  ->  runs                                                      */
@@ -217,6 +260,15 @@ export function htmlToRuns(root: Node): Run[] {
     const next: Style = { ...style };
     const color = readColor(el);
     if (color) next.color = color;
+
+    const sizeAttr = el.getAttribute("data-size");
+    if (sizeAttr) {
+      // Older content stored a bare multiplier; `parseSizeHead` needs a head,
+      // so give a bare number the "size:" prefix it used to imply.
+      const head = sizeAttr.includes(":") ? sizeAttr : `size:${sizeAttr}`;
+      const parsed = parseSizeHead(head);
+      if (parsed) next.size = parsed;
+    }
     if (tag === "strong" || tag === "b") next.bold = true;
     if (tag === "em" || tag === "i") next.italic = true;
 
@@ -234,3 +286,136 @@ export function htmlToRuns(root: Node): Run[] {
 
 /** Editor HTML -> marker text. */
 export const htmlToMarker = (root: Node): string => runsToMarker(htmlToRuns(root));
+
+/* ------------------------------------------------------------------ */
+/* field-level operations                                              */
+/* ------------------------------------------------------------------ */
+
+/**
+ * Formatting is applied through the run model rather than by editing the
+ * contentEditable, and a target is a pair of plain-text offsets rather than a
+ * DOM Range.
+ *
+ * Offsets survive the innerHTML rewrite that every formatting change causes,
+ * which is what lets a size be nudged repeatedly — with a Range, the first
+ * change detached the nodes the second one needed. It also means a change can
+ * be applied while focus sits in the size input, where there is no selection
+ * to read at all.
+ */
+export type TextRange = { start: number; end: number };
+
+/**
+ * Rewrites the styles of a field.
+ *
+ * With no range, every run is rewritten — that is what "no selection" means
+ * here, and it is why setting a size with nothing selected resizes the whole
+ * field instead of silently doing nothing.
+ */
+export function mapRuns(
+  marker: string,
+  fn: (style: Style) => Style,
+  range?: TextRange,
+): string {
+  const runs = parseRuns(marker);
+  if (!range) return runsToMarker(runs.map((run) => ({ text: run.text, style: fn(run.style) })));
+
+  const out: Run[] = [];
+  let pos = 0;
+
+  for (const run of runs) {
+    const start = pos;
+    const end = pos + run.text.length;
+    pos = end;
+
+    // Entirely outside the target.
+    if (end <= range.start || start >= range.end) {
+      out.push(run);
+      continue;
+    }
+
+    // Split the run so only the covered characters change.
+    const from = Math.max(range.start - start, 0);
+    const to = Math.min(range.end - start, run.text.length);
+    if (from > 0) out.push({ text: run.text.slice(0, from), style: run.style });
+    out.push({ text: run.text.slice(from, to), style: fn(run.style) });
+    if (to < run.text.length) out.push({ text: run.text.slice(to), style: run.style });
+  }
+
+  return runsToMarker(out);
+}
+
+/** The run containing an offset, with the extent it covers. */
+export function runAt(marker: string, offset: number): (TextRange & { style: Style }) | null {
+  let pos = 0;
+  for (const run of mergeRuns(parseRuns(marker))) {
+    const start = pos;
+    const end = pos + run.text.length;
+    pos = end;
+    // A caret sitting exactly on the boundary belongs to the run it follows.
+    if (offset >= start && offset <= end) return { start, end, style: run.style };
+  }
+  return null;
+}
+
+/**
+ * What the formatting controls should show for a target.
+ *
+ * A value is reported only when every covered run agrees; anything else is
+ * "mixed", so the panel never claims a size the text does not all have.
+ */
+export function summarise(
+  marker: string,
+  range?: TextRange,
+): {
+  color: ColorSpec | null;
+  colorMixed: boolean;
+  size: ResponsiveSize;
+  sizeMixed: boolean;
+  bold: boolean;
+  italic: boolean;
+} {
+  const all = mergeRuns(parseRuns(marker));
+  const covered: Run[] = [];
+
+  if (range) {
+    let pos = 0;
+    for (const run of all) {
+      const start = pos;
+      const end = pos + run.text.length;
+      pos = end;
+      // A collapsed range still describes the run it sits in.
+      const overlaps =
+        range.start === range.end
+          ? range.start >= start && range.start <= end
+          : start < range.end && end > range.start;
+      if (overlaps) covered.push(run);
+    }
+  } else {
+    covered.push(...all);
+  }
+
+  if (covered.length === 0) {
+    return { color: null, colorMixed: false, size: {}, sizeMixed: false, bold: false, italic: false };
+  }
+
+  const colorKeys = new Set(covered.map((r) => (r.style.color ? specToMarker(r.style.color) : "")));
+  const sizeKeys = new Set(covered.map((r) => (r.style.size ? sizeToMarker(r.style.size) : "")));
+
+  return {
+    color: colorKeys.size === 1 ? (covered[0]?.style.color ?? null) : null,
+    colorMixed: colorKeys.size > 1,
+    size: sizeKeys.size === 1 ? (covered[0]?.style.size ?? {}) : {},
+    sizeMixed: sizeKeys.size > 1,
+    bold: covered.every((r) => r.style.bold),
+    italic: covered.every((r) => r.style.italic),
+  };
+}
+
+/** Every distinct colour used in a field, for the "used here" row. */
+export function usedColors(marker: string): ColorSpec[] {
+  const seen = new Map<string, ColorSpec>();
+  for (const run of parseRuns(marker)) {
+    if (run.style.color) seen.set(specToMarker(run.style.color), run.style.color);
+  }
+  return [...seen.values()];
+}

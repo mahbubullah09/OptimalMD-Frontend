@@ -6,6 +6,14 @@
  * — drop the real CDN URL in and every usage updates at once.
  */
 
+/**
+ * Canonical origin used for metadata, structured data and canonical links.
+ * Overridable so a demo or preview deployment does not claim to be the
+ * production site.
+ */
+export const SITE_URL =
+  process.env.SITE_URL?.replace(/\/+$/, "") || "https://optimalmd.com";
+
 export const ORG = {
   name: "OptimalMD",
   legalName: "OptimalMD Technologies, LLC",

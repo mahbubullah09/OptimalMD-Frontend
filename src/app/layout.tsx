@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { Montserrat, Open_Sans } from "next/font/google";
+import { SITE_URL } from "@/lib/site";
 import "./globals.css";
 
 const montserrat = Montserrat({
@@ -22,7 +23,7 @@ const openSans = Open_Sans({
  * the admin's in admin/layout.tsx, so neither leaks into the other.
  */
 export const metadata: Metadata = {
-  metadataBase: new URL("https://optimalmd.com"),
+  metadataBase: new URL(SITE_URL),
   title: {
     default: "OptimalMD",
     template: "%s | OptimalMD",

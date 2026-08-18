@@ -17,6 +17,7 @@ import { withSeoDefaults } from "@/lib/content.types";
 import { getPublishedPage } from "@/lib/content";
 import { buildStructuredData } from "@/lib/structuredData";
 import { createSectionResolver } from "@/lib/pageContent";
+import { SITE_URL } from "@/lib/site";
 
 /**
  * SEO is read from the CMS, so edits in the admin take effect as soon as the
@@ -76,7 +77,7 @@ export default async function HomePage() {
 
   const jsonLd = buildStructuredData(
     withSeoDefaults(page?.seo),
-    "https://optimalmd.com/",
+    `${SITE_URL}/`,
     [network.logos, appPromo.phone, ...why.cards.map((c) => c.icon)],
   );
 

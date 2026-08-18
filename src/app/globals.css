@@ -181,6 +181,29 @@ img {
   color: var(--green);
 }
 
+/* Per-device text sizing, emitted by richText for {{size:…}} markers.
+
+   Each breakpoint falls back to the one above it, so a size set only for
+   desktop still applies everywhere, while a size set only for mobile leaves
+   desktop and tablet at their normal size. The 980/600 thresholds are the
+   same ones the sections use, so the admin preview's Tablet and Mobile
+   widths (834 / 390) land in the bands their labels promise. */
+.rt-size {
+  font-size: var(--fs-d, inherit);
+}
+
+@media (max-width: 980px) {
+  .rt-size {
+    font-size: var(--fs-t, var(--fs-d, inherit));
+  }
+}
+
+@media (max-width: 600px) {
+  .rt-size {
+    font-size: var(--fs-m, var(--fs-t, var(--fs-d, inherit)));
+  }
+}
+
 /* Gradient text helper */
 .gt {
   background: var(--grad-text);
