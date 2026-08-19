@@ -1,5 +1,10 @@
-import { ASSETS, ORG } from "@/lib/site";
-import { aboutLinks, faqLinks, infoLinks, whatsIncludedLinks } from "./footer.data";
+import Link from "next/link";
+import type { ReactElement } from "react";
+import type { ContactIcon, FooterData, SocialPlatform } from "@/lib/globals.types";
+import { backgroundStyle } from "@/lib/appearance";
+import { plainText } from "@/lib/markerParser";
+import { richText } from "@/lib/richText";
+import { footerDefaults } from "./footer.data";
 import styles from "./Footer.module.css";
 
 /** Chevron that prefixes every footer link. */
@@ -57,157 +62,179 @@ const YoutubeIcon = () => (
   </svg>
 );
 
-export default function Footer() {
+const LinkedInIcon = () => (
+  <svg viewBox="0 0 24 24" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
+    <rect x="3" y="3" width="18" height="18" rx="4" />
+    <path d="M7.5 10.5v6M7.5 7.6v.1M11.5 16.5v-6M11.5 13a2.5 2.5 0 0 1 5 0v3.5" />
+  </svg>
+);
+
+const XIcon = () => (
+  <svg viewBox="0 0 24 24" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
+    <path d="m4 4 16 16M20 4 4 20" />
+  </svg>
+);
+
+/** Icon sets are lookups so the platforms and contact rows stay data-driven. */
+const SOCIAL_ICONS: Record<SocialPlatform, () => ReactElement> = {
+  facebook: FacebookIcon,
+  instagram: InstagramIcon,
+  youtube: YoutubeIcon,
+  linkedin: LinkedInIcon,
+  x: XIcon,
+};
+
+const SOCIAL_LABELS: Record<SocialPlatform, string> = {
+  facebook: "Facebook",
+  instagram: "Instagram",
+  youtube: "YouTube",
+  linkedin: "LinkedIn",
+  x: "X",
+};
+
+const CONTACT_GLYPHS: Record<ContactIcon, () => ReactElement> = {
+  phone: PhoneIcon,
+  mail: MailIcon,
+  pin: PinIcon,
+};
+
+export default function Footer({ data = footerDefaults }: { data?: FooterData }) {
+  const { logo, blurb, badge, social, columns, contact, legal, appearance } = data;
   const year = new Date().getFullYear();
-  const { street, suite, city, region, postalCode } = ORG.address;
-  const telHref = `tel:${ORG.phoneE164.replace(/[^+\d]/g, "")}`;
 
   return (
-    <footer className={styles.footer}>
+    <footer className={styles.footer} style={backgroundStyle(appearance)}>
       <div className={styles.footWrap}>
         <div className={styles.footTop}>
           <div className={styles.ftLeft}>
-            <a href={ORG.url} aria-label={`${ORG.name} home`}>
-              {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img className={styles.logoImg} src={ASSETS.logo} alt={ORG.name} />
-            </a>
-
-            <p>
-              <a href={ORG.url}>OptimalMD</a> empowers everyone to live their healthiest lives,
-              regardless of financial or insurance status.
-            </p>
-
-            <a href="https://www.bbb.org/" aria-label="BBB Business Review">
+            <Link href="/" aria-label="Home">
               {/* eslint-disable-next-line @next/next/no-img-element */}
               <img
-                className={styles.bbbImg}
-                src={ASSETS.bbbBadge}
-                loading="lazy"
-                decoding="async"
-                alt="OptimalMD Technologies, LLC BBB Business Review"
+                className={styles.logoImg}
+                src={logo.src}
+                alt={plainText(logo.alt)}
+                title={logo.title || undefined}
+                data-preview-field="footer.logo"
+                style={{
+                  ...(logo.width ? { width: logo.width } : {}),
+                  ...(logo.height ? { height: logo.height } : {}),
+                }}
               />
-            </a>
+            </Link>
+
+            <p data-preview-field="footer.blurb">{richText(blurb)}</p>
+
+            {badge.src ? (
+              <a href="https://www.bbb.org/" aria-label="BBB Business Review">
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img
+                  className={styles.bbbImg}
+                  src={badge.src}
+                  loading="lazy"
+                  decoding="async"
+                  alt={plainText(badge.alt)}
+                  title={badge.title || undefined}
+                  data-preview-field="footer.badge"
+                  style={{
+                    ...(badge.width ? { width: badge.width } : {}),
+                    ...(badge.height ? { height: badge.height } : {}),
+                  }}
+                />
+              </a>
+            ) : null}
 
             <div className={styles.socials}>
-              <a href={ORG.social.facebook} aria-label="OptimalMD on Facebook">
-                <FacebookIcon />
-              </a>
-              <a href={ORG.social.instagram} aria-label="OptimalMD on Instagram">
-                <InstagramIcon />
-              </a>
-              <a href={ORG.social.youtube} aria-label="OptimalMD on YouTube">
-                <YoutubeIcon />
-              </a>
+              {social.map((item, socialIndex) => {
+                const Icon = SOCIAL_ICONS[item.platform];
+                if (!Icon) return null;
+                return (
+                  <a
+                    href={item.href}
+                    key={item.platform}
+                    data-preview-field={`footer.social.${socialIndex}`}
+                    aria-label={`OptimalMD on ${SOCIAL_LABELS[item.platform]}`}
+                  >
+                    <Icon />
+                  </a>
+                );
+              })}
             </div>
           </div>
 
-          <div className={styles.footCol}>
-            <h5>What&apos;s Included</h5>
-            <div className={styles.links}>
-              {whatsIncludedLinks.map((link) => (
-                <a href={link.href} key={link.label}>
-                  <LinkChevron />
-                  {link.label}
-                </a>
+          {columns.map((column, columnIndex) => (
+            // Columns have no natural id; their position is their identity.
+            <div className={styles.footCol} key={columnIndex}>
+              {column.groups.map((group, groupIndex) => (
+                <div key={group.title || groupIndex}>
+                  {/* The live footer stacks a second heading in one column, so
+                      only the first group in a column sits flush to the top. */}
+                  <h5
+                    className={groupIndex > 0 ? styles.stacked : undefined}
+                    data-preview-field={`footer.columns.${columnIndex}.groups.${groupIndex}.title`}
+                  >
+                    {richText(group.title)}
+                  </h5>
+                  <div className={styles.links}>
+                    {group.links.map((link, linkIndex) => (
+                      <a
+                        href={link.href}
+                        key={link.label}
+                        data-preview-field={`footer.columns.${columnIndex}.groups.${groupIndex}.links.${linkIndex}.label`}
+                      >
+                        <LinkChevron />
+                        {richText(link.label)}
+                      </a>
+                    ))}
+                  </div>
+                </div>
               ))}
             </div>
-          </div>
+          ))}
 
           <div className={styles.footCol}>
-            <h5>FAQ</h5>
-            <div className={styles.links}>
-              {faqLinks.map((link) => (
-                <a href={link.href} key={link.label}>
-                  <LinkChevron />
-                  {link.label}
-                </a>
-              ))}
-            </div>
+            <h5 data-preview-field="footer.contact.title">{richText(contact.title)}</h5>
 
-            <h5 className={styles.stacked}>Info</h5>
-            <div className={styles.links}>
-              {infoLinks.map((link) => (
-                <a href={link.href} key={link.label}>
-                  <LinkChevron />
-                  {link.label}
-                </a>
-              ))}
-            </div>
-          </div>
-
-          <div className={styles.footCol}>
-            <h5>About</h5>
-            <div className={styles.links}>
-              {aboutLinks.map((link) => (
-                <a href={link.href} key={link.label}>
-                  <LinkChevron />
-                  {link.label}
-                </a>
-              ))}
-            </div>
-          </div>
-
-          <div className={styles.footCol}>
-            <h5>Contact Us</h5>
-
-            <div className={styles.contactItem}>
-              <span className={styles.ci}>
-                <PhoneIcon />
-              </span>
-              <span>
-                <b>Phone Support</b>
-                <small>
-                  Toll Free: <a href={telHref}>{ORG.phone}</a>
-                </small>
-              </span>
-            </div>
-
-            <div className={styles.contactItem}>
-              <span className={styles.ci}>
-                <MailIcon />
-              </span>
-              <span>
-                <b>Email Us</b>
-                <small>
-                  <a href={`mailto:${ORG.email}`}>{ORG.email}</a>
-                </small>
-              </span>
-            </div>
-
-            <div className={styles.contactItem}>
-              <span className={styles.ci}>
-                <PinIcon />
-              </span>
-              <span>
-                <b>Corporate Office</b>
-                <small>
-                  {street}
-                  <br />
-                  {suite}
-                  <br />
-                  {city}, {region} {postalCode}
-                  <br />
-                  Phone: <a href={telHref}>{ORG.phone}</a>
-                </small>
-              </span>
-            </div>
+            {contact.items.map((item, contactIndex) => {
+              const Glyph = CONTACT_GLYPHS[item.icon] ?? CONTACT_GLYPHS.pin;
+              return (
+                <div
+                  className={styles.contactItem}
+                  key={item.title}
+                  data-preview-field={`footer.contact.items.${contactIndex}.title`}
+                >
+                  <span className={styles.ci}>
+                    <Glyph />
+                  </span>
+                  <span>
+                    <b>{richText(item.title)}</b>
+                    <small>{richText(item.body)}</small>
+                  </span>
+                </div>
+              );
+            })}
           </div>
         </div>
 
         {/* The live footer has no legal bar, but the supplied CSS styles one
             (.foot-bottom / .fb-links / .not-ins), so it is rendered here. */}
         <div className={styles.footBottom}>
-          <span>
-            © {year} {ORG.legalName}. All rights reserved.
+          <span data-preview-field="footer.legal.copyright">
+            {richText(legal.copyright.replace("{year}", String(year)))}
           </span>
           <div className={styles.fbLinks}>
-            {infoLinks.map((link) => (
-              <a href={link.href} key={link.label}>
-                {link.label}
+            {legal.links.map((link, linkIndex) => (
+              <a
+                href={link.href}
+                key={link.label}
+                data-preview-field={`footer.legal.links.${linkIndex}.label`}
+              >
+                {richText(link.label)}
               </a>
             ))}
           </div>
-          <span className={styles.notIns}>OptimalMD is not insurance.</span>
+          <span className={styles.notIns} data-preview-field="footer.legal.note">
+            {richText(legal.note)}
+          </span>
         </div>
       </div>
     </footer>

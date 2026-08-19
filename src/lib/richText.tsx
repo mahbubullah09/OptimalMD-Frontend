@@ -12,6 +12,7 @@ import { type MarkerNode, parseMarkers, sizeToVars, specCss } from "./markerPars
  *   {{size:1.4|text}}             -> 1.4x the surrounding size
  *   {{px:24|text}}                -> exactly 24px
  *   {{size:d=1.4em,m=18px|text}}  -> a different size per device
+ *   {{link:https://…|text}}       -> a link
  *   a new line                    -> <br />
  *
  * Returns React elements, never `dangerouslySetInnerHTML`, so CMS content can
@@ -32,6 +33,18 @@ function render(nodes: MarkerNode[], keyPrefix = "r"): ReactNode[] {
         return <strong key={key}>{render(node.children, key)}</strong>;
       case "italic":
         return <em key={key}>{render(node.children, key)}</em>;
+      case "link":
+        // Parsing already rejected any scheme outside the allowlist, so an
+        // href reaching here cannot be javascript: or data:.
+        return (
+          <a
+            key={key}
+            href={node.href}
+            {...(node.href.startsWith("http") ? { rel: "noopener noreferrer" } : {})}
+          >
+            {render(node.children, key)}
+          </a>
+        );
       case "size":
         // The sizes travel as custom properties; the breakpoint that wins is
         // decided by the .rt-size rules in globals.css, so a tablet-only size

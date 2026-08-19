@@ -44,8 +44,8 @@ export default function GivesBack({ data = givesBackDefaults }: { data?: GivesBa
                     {richText(card.backTitle)}
                   </h5>
                   <ul data-preview-field={`cards.${i}.bullets`}>
-                    {card.bullets.map((bullet) => (
-                      <li key={bullet}>
+                    {card.bullets.map((bullet, b) => (
+                      <li key={bullet} data-preview-field={`cards.${i}.bullets.${b}`}>
                         <span className={styles.pl}>
                           <PlusIcon />
                         </span>

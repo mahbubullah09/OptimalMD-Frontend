@@ -383,11 +383,6 @@
 .left .t2 { color: var(--blue-2); }
 .right .t2 { color: var(--green-2); }
 
-/* "at" / "Included" prefix stays white so the value pops. */
-.t2Prefix {
-  color: #fff;
-}
-
 /* ---------------- bridging statement ---------------- */
 .heroBridge {
   grid-column: 1 / -1;

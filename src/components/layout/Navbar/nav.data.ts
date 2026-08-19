@@ -1,3 +1,6 @@
+import type { NavData, NavItem } from "@/lib/globals.types";
+import { ASSETS, ORG } from "@/lib/site";
+
 /**
  * Navigation structure, transcribed from the live site's nav markup.
  *
@@ -5,22 +8,22 @@
  * item is either a plain link or a branch that opens a flyout.
  */
 
-export type NavLink = {
+type NavLink = {
   label: string;
   href: string;
 };
 
 /** A dropdown row that opens a side flyout instead of navigating. */
-export type NavBranch = {
+type NavBranch = {
   label: string;
   children: NavLink[];
   /** Flyout opens to the left of the dropdown rather than the right. */
   flyoutLeft?: boolean;
 };
 
-export type NavDropdownItem = NavLink | NavBranch;
+type NavDropdownItem = NavLink | NavBranch;
 
-export type NavEntry =
+type NavEntry =
   | NavLink
   | {
       label: string;
@@ -29,15 +32,9 @@ export type NavEntry =
       alignRight?: boolean;
     };
 
-export const isBranch = (item: NavDropdownItem): item is NavBranch => "children" in item;
-
-export const hasDropdown = (
-  entry: NavEntry,
-): entry is Extract<NavEntry, { children: NavDropdownItem[] }> => "children" in entry;
-
 const BASE = "https://optimalmd.com";
 
-export const navEntries: NavEntry[] = [
+const navEntries: NavEntry[] = [
   { label: "Individuals", href: `${BASE}/individual` },
   { label: "Employers", href: `${BASE}/employers` },
   {
@@ -100,7 +97,38 @@ export const navEntries: NavEntry[] = [
   },
 ];
 
-export const navActions = {
+const navActions = {
   login: "https://portal.optimalmd.com/login",
   getStarted: `${BASE}/pricing`,
+};
+
+/* ------------------------------------------------------------------ */
+/* defaults for the CMS                                                */
+/* ------------------------------------------------------------------ */
+
+/**
+ * The transcribed structure above, normalised into the uniform `NavItem`
+ * shape the CMS stores and the editor edits.
+ *
+ * Written as an adapter rather than a second hand-transcription so the two can
+ * never drift, and so the source of truth for "what the live nav says" stays
+ * the markup transcription above.
+ */
+const toNavItem = (entry: NavEntry | NavDropdownItem): NavItem => {
+  const children = "children" in entry ? entry.children.map(toNavItem) : [];
+  return {
+    label: entry.label,
+    href: "href" in entry ? entry.href : "",
+    children,
+    ...("alignRight" in entry && entry.alignRight ? { alignRight: true } : {}),
+    ...("flyoutLeft" in entry && entry.flyoutLeft ? { flyoutLeft: true } : {}),
+  };
+};
+
+export const navDefaults: NavData = {
+  logo: { src: ASSETS.logo, alt: "OptimalMD Logo", title: "", description: "" },
+  homeHref: ORG.url,
+  entries: navEntries.map(toNavItem),
+  login: { label: "Login", href: navActions.login },
+  cta: { label: "Get Started", href: navActions.getStarted },
 };

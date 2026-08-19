@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { ChevronIcon } from "../icons";
 import {
   type PageSchema,
   type PageSeo,
@@ -64,9 +65,7 @@ function Group({
         aria-expanded={open}
         onClick={() => setOpen((v) => !v)}
       >
-        <span className="seoChevron" aria-hidden>
-          {open ? "⌄" : "›"}
-        </span>
+        <ChevronIcon className="seoChevron" />
         <span className="seoGroupTitle">{title}</span>
         {issues !== undefined ? (
           <span className={`seoCount${issues === 0 ? " seoCountClear" : ""}`}>{issues}</span>
@@ -88,7 +87,7 @@ export default function SeoPanel({
 }) {
   const set = (patch: Partial<PageSeo>) => onChange({ ...seo, ...patch });
   const setSchema = (patch: Partial<PageSchema>) =>
-    onChange({ ...seo, schema: { ...seo.schema, ...patch } });
+    onChange({ ...seo, structuredData: { ...seo.structuredData, ...patch } });
 
   const title = seo.title ?? "";
   const description = seo.description ?? "";
@@ -250,35 +249,35 @@ export default function SeoPanel({
 
         <CheckField
           label="Organisation details (name, logo, phone, address, social profiles)"
-          checked={seo.schema.organization.enabled}
+          checked={seo.structuredData.organization.enabled}
           onChange={(enabled) => setSchema({ organization: { enabled } })}
         />
 
         <CheckField
           label="Page type"
-          checked={seo.schema.webPage.enabled}
-          onChange={(enabled) => setSchema({ webPage: { ...seo.schema.webPage, enabled } })}
+          checked={seo.structuredData.webPage.enabled}
+          onChange={(enabled) => setSchema({ webPage: { ...seo.structuredData.webPage, enabled } })}
         />
-        {seo.schema.webPage.enabled ? (
+        {seo.structuredData.webPage.enabled ? (
           <SelectField
             label="What kind of page is this?"
-            value={seo.schema.webPage.type}
+            value={seo.structuredData.webPage.type}
             options={WEBPAGE_TYPES}
-            onChange={(type) => setSchema({ webPage: { ...seo.schema.webPage, type } })}
+            onChange={(type) => setSchema({ webPage: { ...seo.structuredData.webPage, type } })}
           />
         ) : null}
 
         <CheckField
           label="Frequently asked questions"
-          checked={seo.schema.faq.enabled}
-          onChange={(enabled) => setSchema({ faq: { ...seo.schema.faq, enabled } })}
+          checked={seo.structuredData.faq.enabled}
+          onChange={(enabled) => setSchema({ faq: { ...seo.structuredData.faq, enabled } })}
         />
-        {seo.schema.faq.enabled ? (
+        {seo.structuredData.faq.enabled ? (
           <RepeatableField
             label="Questions"
             hint="Can appear as an expandable FAQ directly in search results"
-            value={seo.schema.faq.items}
-            onChange={(items) => setSchema({ faq: { ...seo.schema.faq, items } })}
+            value={seo.structuredData.faq.items}
+            onChange={(items) => setSchema({ faq: { ...seo.structuredData.faq, items } })}
             newItem={() => ({ question: "", answer: "" })}
             itemTitle={(item) => item.question}
             addLabel="Add question"
@@ -301,17 +300,17 @@ export default function SeoPanel({
 
         <CheckField
           label="Breadcrumb trail"
-          checked={seo.schema.breadcrumbs.enabled}
+          checked={seo.structuredData.breadcrumbs.enabled}
           onChange={(enabled) =>
-            setSchema({ breadcrumbs: { ...seo.schema.breadcrumbs, enabled } })
+            setSchema({ breadcrumbs: { ...seo.structuredData.breadcrumbs, enabled } })
           }
         />
-        {seo.schema.breadcrumbs.enabled ? (
+        {seo.structuredData.breadcrumbs.enabled ? (
           <RepeatableField
             label="Trail"
             hint="Ordered from the site root to this page"
-            value={seo.schema.breadcrumbs.items}
-            onChange={(items) => setSchema({ breadcrumbs: { ...seo.schema.breadcrumbs, items } })}
+            value={seo.structuredData.breadcrumbs.items}
+            onChange={(items) => setSchema({ breadcrumbs: { ...seo.structuredData.breadcrumbs, items } })}
             newItem={() => ({ name: "", url: "" })}
             itemTitle={(item) => item.name}
             addLabel="Add level"

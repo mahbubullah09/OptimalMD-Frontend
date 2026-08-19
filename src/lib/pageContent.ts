@@ -35,4 +35,3 @@ export function createSectionResolver(page: PageDocument | null) {
   };
 }
 
-export type SectionResolver = ReturnType<typeof createSectionResolver>;

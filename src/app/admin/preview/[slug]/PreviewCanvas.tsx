@@ -1,131 +1,158 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import AppPromo, { appPromoDefaults } from "@/components/sections/AppPromo/AppPromo";
-import Audiences, { audiencesDefaults } from "@/components/sections/Audiences/Audiences";
-import CareCoverage from "@/components/sections/CareCoverage/CareCoverage";
-import { careCoverageDefaults } from "@/components/sections/CareCoverage/care.data";
-import FinalCta, { finalCtaDefaults } from "@/components/sections/FinalCta/FinalCta";
-import GivesBack from "@/components/sections/GivesBack/GivesBack";
-import { givesBackDefaults } from "@/components/sections/GivesBack/gives.data";
-import Hero from "@/components/sections/Hero/Hero";
-import { heroDefaults } from "@/components/sections/Hero/hero.data";
-import Network, { networkDefaults } from "@/components/sections/Network/Network";
-import NoList, { noListDefaults } from "@/components/sections/NoList/NoList";
-import WhyOptimalMD, {
-  whyOptimalMDDefaults,
-} from "@/components/sections/WhyOptimalMD/WhyOptimalMD";
+import { renderSection } from "@/components/sections/SectionList";
 import type { PageSection } from "@/lib/content.types";
+import { SECTION_LABELS } from "@/lib/content.types";
 
 /**
- * Renders the real marketing sections from draft data.
+ * The canvas: real marketing sections rendered from draft data.
  *
- * This lives inside an iframe so the page gets a genuine viewport — media
+ * It lives inside an iframe so the page gets a genuine viewport — media
  * queries and the responsive layout behave exactly as they will in
  * production, which a CSS-scaled div could not reproduce.
  *
- * The editor pushes drafts in over postMessage; the iframe only trusts
- * messages from its own origin.
+ * It also behaves like a canvas rather than a picture of one. Sections outline
+ * on hover and carry a name badge, the selected one stays outlined, and a
+ * click reports both the section and the exact field beneath the pointer so
+ * the inspector can jump straight to it. Hovering a layer in the editor
+ * highlights the matching section here, which is the same relationship read
+ * from the other direction.
+ *
+ * Only same-origin messages are trusted; the editor and this frame are served
+ * by the same app.
  */
 export const PREVIEW_MESSAGE = "omd-preview-sections";
-/** Sent up when a visitor clicks inside the frame. */
+/** Sent up when someone clicks inside the frame. */
 export const PREVIEW_SELECT = "omd-preview-select";
+/** Sent up as the pointer moves between sections. */
+export const PREVIEW_HOVER = "omd-preview-hover";
+
+type Incoming = {
+  type?: string;
+  sections?: PageSection[];
+  focus?: string | null;
+  selected?: string | null;
+  hover?: string | null;
+};
 
 export default function PreviewCanvas({ initial }: { initial: PageSection[] }) {
   const [sections, setSections] = useState<PageSection[]>(initial);
+  const [selected, setSelected] = useState<string | null>(null);
+  const [hover, setHover] = useState<string | null>(null);
   const [focus, setFocus] = useState<string | null>(null);
 
   useEffect(() => {
     function onMessage(event: MessageEvent) {
-      // Same-origin only: the editor and this frame are served by this app.
       if (event.origin !== window.location.origin) return;
-      const payload = event.data as
-        | { type?: string; sections?: PageSection[]; focus?: string | null }
-        | null;
+      const payload = event.data as Incoming | null;
       if (!payload || payload.type !== PREVIEW_MESSAGE) return;
 
       if (Array.isArray(payload.sections)) setSections(payload.sections);
+      if (payload.selected !== undefined) setSelected(payload.selected);
+      // `hover` is driven by the layers list; the pointer inside the frame
+      // sets it locally below.
+      if (payload.hover !== undefined) setHover(payload.hover);
       if (payload.focus !== undefined) setFocus(payload.focus);
     }
 
     window.addEventListener("message", onMessage);
-    // Tell the editor we are ready, so it can push the current draft even if
-    // the iframe finished loading after the first change.
-    window.parent.postMessage({ type: `${PREVIEW_MESSAGE}:ready` }, window.location.origin);
-
+    window.parent?.postMessage(
+      { type: `${PREVIEW_MESSAGE}:ready` },
+      window.location.origin,
+    );
     return () => window.removeEventListener("message", onMessage);
   }, []);
 
   // Scroll the section being edited into view.
   useEffect(() => {
     if (!focus) return;
-    const el = document.querySelector(`[data-preview-key="${focus}"]`);
-    el?.scrollIntoView({ behavior: "smooth", block: "start" });
+    document
+      .querySelector(`[data-preview-key="${CSS.escape(focus)}"]`)
+      ?.scrollIntoView({ behavior: "smooth", block: "start" });
   }, [focus]);
 
-  // Clicking anything in the frame selects the section that owns it, so the
-  // editor can jump to the matching form. Links are suppressed — navigating
-  // away inside the preview would be surprising and lose the draft view.
   useEffect(() => {
+    const keyOf = (target: EventTarget | null) =>
+      (target as HTMLElement | null)
+        ?.closest?.("[data-preview-key]")
+        ?.getAttribute("data-preview-key") ?? null;
+
     function onClick(event: MouseEvent) {
-      const target = event.target as HTMLElement | null;
-      const owner = target?.closest?.("[data-preview-key]");
-      if (!owner) return;
+      const key = keyOf(event.target);
+      if (!key) return;
 
+      // Links would navigate away from the draft, which loses the edit in
+      // progress; selecting is what a click means on a canvas.
       event.preventDefault();
-      const key = owner.getAttribute("data-preview-key");
-      const field = target?.closest?.("[data-preview-field]")?.getAttribute("data-preview-field");
+      const field =
+        (event.target as HTMLElement | null)
+          ?.closest?.("[data-preview-field]")
+          ?.getAttribute("data-preview-field") ?? null;
 
+      setSelected(key);
       window.parent.postMessage(
-        { type: PREVIEW_SELECT, key, field: field ?? null },
+        { type: PREVIEW_SELECT, key, field },
+        window.location.origin,
+      );
+    }
+
+    function onMove(event: MouseEvent) {
+      const key = keyOf(event.target);
+      setHover((current) => {
+        if (current === key) return current;
+        window.parent.postMessage(
+          { type: PREVIEW_HOVER, key },
+          window.location.origin,
+        );
+        return key;
+      });
+    }
+
+    function onLeave() {
+      setHover(null);
+      window.parent.postMessage(
+        { type: PREVIEW_HOVER, key: null },
         window.location.origin,
       );
     }
 
     document.addEventListener("click", onClick, true);
-    return () => document.removeEventListener("click", onClick, true);
+    document.addEventListener("mousemove", onMove);
+    document.addEventListener("mouseleave", onLeave);
+    return () => {
+      document.removeEventListener("click", onClick, true);
+      document.removeEventListener("mousemove", onMove);
+      document.removeEventListener("mouseleave", onLeave);
+    };
   }, []);
 
-  const visible = [...sections].filter((s) => s.enabled).sort((a, b) => a.order - b.order);
-
-  const render = (section: PageSection) => {
-    const d = section.data as never;
-
-    switch (section.type) {
-      case "hero":
-        return <Hero data={{ ...heroDefaults, ...(d as object) }} />;
-      case "careCoverage":
-        return <CareCoverage data={{ ...careCoverageDefaults, ...(d as object) }} />;
-      case "audiences":
-        return <Audiences data={{ ...audiencesDefaults, ...(d as object) }} />;
-      case "network":
-        return <Network data={{ ...networkDefaults, ...(d as object) }} />;
-      case "noList":
-        return <NoList data={{ ...noListDefaults, ...(d as object) }} />;
-      case "appPromo":
-        return <AppPromo data={{ ...appPromoDefaults, ...(d as object) }} />;
-      case "whyOptimalMD":
-        return <WhyOptimalMD data={{ ...whyOptimalMDDefaults, ...(d as object) }} />;
-      case "givesBack":
-        return <GivesBack data={{ ...givesBackDefaults, ...(d as object) }} />;
-      case "finalCta":
-        return <FinalCta data={{ ...finalCtaDefaults, ...(d as object) }} />;
-      default:
-        return null;
-    }
-  };
+  const visible = [...sections]
+    .filter((s) => s.enabled)
+    .sort((a, b) => a.order - b.order);
 
   return (
     <main className="site-main">
-      {visible.map((section) => (
-        <div
-          key={section.key}
-          data-preview-key={section.key}
-          className={focus === section.key ? "previewSection isFocused" : "previewSection"}
-        >
-          {render(section)}
-        </div>
-      ))}
+      {visible.map((section) => {
+        const state = [
+          "previewSection",
+          selected === section.key ? "isSelected" : "",
+          hover === section.key ? "isHovered" : "",
+        ]
+          .filter(Boolean)
+          .join(" ");
+
+        return (
+          <div key={section.key} data-preview-key={section.key} className={state}>
+            {/* Names the thing you are about to select, the way a canvas
+                does — otherwise an outline appears with no explanation. */}
+            <span className="previewTag">
+              {SECTION_LABELS[section.type] ?? section.type}
+            </span>
+            {renderSection(section)}
+          </div>
+        );
+      })}
     </main>
   );
 }

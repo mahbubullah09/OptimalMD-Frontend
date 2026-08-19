@@ -3,7 +3,7 @@
 import { revalidatePath } from "next/cache";
 import { ApiRequestError, apiFetch } from "@/lib/api";
 import { getSessionToken } from "@/lib/adminSession";
-import type { PageSeo } from "@/lib/content.types";
+import type { PageSection, PageSeo } from "@/lib/content.types";
 
 export type ActionResult = { ok: true; revalidated: boolean } | { ok: false; error: string };
 
@@ -28,6 +28,40 @@ export async function saveSeo(slug: string, seo: PageSeo): Promise<ActionResult>
       apiFetch<{ revalidated: boolean }>(`/pages/${slug}`, {
         method: "PUT",
         body: { seo },
+        token,
+      }),
+    );
+
+    revalidatePath(`/admin/pages/${slug}`);
+    return { ok: true, revalidated };
+  } catch (err) {
+    return { ok: false, error: toMessage(err) };
+  }
+}
+
+/**
+ * Replaces the page's whole section list.
+ *
+ * Used when sections are added, removed or reordered: the per-section PATCH
+ * can only edit one that already exists, so a newly added block would 404.
+ */
+/**
+ * Saves the order and visibility of every section at once.
+ *
+ * Reordering is not something the per-section endpoint can express — moving
+ * a block changes the order of its neighbours too — so the list goes up as a
+ * whole. It carries each section's content as well, which is why a reorder
+ * does not need a second save afterwards.
+ */
+export async function saveSections(
+  slug: string,
+  sections: PageSection[],
+): Promise<ActionResult> {
+  try {
+    const { revalidated } = await withToken((token) =>
+      apiFetch<{ revalidated: boolean }>(`/pages/${slug}`, {
+        method: "PUT",
+        body: { sections },
         token,
       }),
     );

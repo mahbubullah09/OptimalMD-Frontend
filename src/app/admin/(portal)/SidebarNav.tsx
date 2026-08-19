@@ -48,6 +48,13 @@ const PagesIcon = () => (
   </svg>
 );
 
+const ChromeIcon = () => (
+  <svg className="navIcon" viewBox="0 0 24 24" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
+    <rect x="3" y="4" width="18" height="16" rx="2.5" />
+    <path d="M3 8.5h18M3 16h18M7 6.2h.01M9.6 6.2h.01" />
+  </svg>
+);
+
 export default function SidebarNav({ pages }: { pages: NavPage[] }) {
   const pathname = usePathname();
   const inPages = pathname.startsWith("/admin/pages");
@@ -75,6 +82,17 @@ export default function SidebarNav({ pages }: { pages: NavPage[] }) {
       </Link>
 
       <div className="navLabel">Content</div>
+
+      {/* Sits above Pages: the chrome wraps every page, so it reads as the
+          outer thing rather than as one more page. */}
+      <Link
+        href="/admin/site"
+        className="navLink"
+        aria-current={pathname === "/admin/site" ? "page" : undefined}
+      >
+        <ChromeIcon />
+        Navigation &amp; footer
+      </Link>
 
       <div className={`navGroup${openPages ? " isOpen" : ""}`}>
         <button

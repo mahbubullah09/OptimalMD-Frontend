@@ -29,6 +29,14 @@ export async function POST(req: NextRequest) {
     // No body is fine — fall back to the home page.
   }
 
+  // The navbar and footer appear on every page, so a change to either
+  // invalidates the whole site rather than one route. The backend sends "*".
+  if (slug === "*") {
+    revalidateTag("globals", { expire: 0 });
+    revalidatePath("/", "layout");
+    return NextResponse.json({ revalidated: true, path: "/", tag: "globals" });
+  }
+
   const path = slug === "home" ? "/" : `/${slug}`;
   const tag = `page:${slug}`;
 

@@ -99,7 +99,7 @@ export default function CareCoverage({
 
               <ul className={styles.careList} data-preview-field={`panes.${activeIndex}.items`}>
                 {active.items.map((item, i) => (
-                  <li key={i}>
+                  <li key={i} data-preview-field={`panes.${activeIndex}.items.${i}`}>
                     <span className={styles.ck}>
                       <CheckIcon />
                     </span>

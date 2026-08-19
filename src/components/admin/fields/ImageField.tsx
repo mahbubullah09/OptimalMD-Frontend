@@ -53,6 +53,49 @@ export default function ImageField({
         )}
       </div>
 
+      {/* Size sits directly under the preview, because it is the thing you
+          judge by looking at the preview. Blank means "scale naturally",
+          which is the right default for everything but a logo. */}
+      <div className="imageSizeRow">
+        <label className="subField">
+          <span>
+            Width
+            <small>px</small>
+          </span>
+          <input
+            className="input"
+            type="number"
+            min={1}
+            max={4000}
+            value={value.width ?? ""}
+            placeholder="auto"
+            onChange={(e) => {
+              const next = Number.parseInt(e.target.value, 10);
+              set({ width: Number.isFinite(next) && next > 0 ? next : undefined });
+            }}
+          />
+        </label>
+
+        <label className="subField">
+          <span>
+            Height
+            <small>px</small>
+          </span>
+          <input
+            className="input"
+            type="number"
+            min={1}
+            max={4000}
+            value={value.height ?? ""}
+            placeholder="auto"
+            onChange={(e) => {
+              const next = Number.parseInt(e.target.value, 10);
+              set({ height: Number.isFinite(next) && next > 0 ? next : undefined });
+            }}
+          />
+        </label>
+      </div>
+
       <label className="subField">
         <span>Image URL</span>
         <input

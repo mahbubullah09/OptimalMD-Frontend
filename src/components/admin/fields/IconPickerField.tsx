@@ -1,6 +1,7 @@
 "use client";
 
 import { type ComponentType, useEffect, useRef, useState } from "react";
+import { ChevronIcon } from "../icons";
 
 /**
  * Icon chooser.
@@ -73,7 +74,7 @@ export default function IconPickerField({
           <span className="iconOptionArt">{Selected ? <Selected /> : null}</span>
           <span className="iconTriggerName">{value || "Choose an icon"}</span>
           <span className="iconTriggerCaret" aria-hidden>
-            {open ? "⌃" : "⌄"}
+            <ChevronIcon className="pickerChevron" />
           </span>
         </button>
 

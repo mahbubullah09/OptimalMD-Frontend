@@ -37,7 +37,7 @@ export function buildStructuredData(
   images: ImageData[] = [],
 ): object[] {
   const blocks: object[] = [];
-  const schema = seo.schema;
+  const schema = seo.structuredData;
   if (!schema) return blocks;
 
   if (schema.organization?.enabled) {

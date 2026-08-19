@@ -12,12 +12,6 @@ body {
   transform: none !important;
 }
 
-/* Entrance animations replay on every keystroke otherwise, which reads as
-   flicker while typing. */
-.preview-static * {
-  animation: none !important;
-}
-
 /* Every section is clickable, so make that discoverable without making the
    page look like an editor. */
 .previewSection {
@@ -34,11 +28,62 @@ body {
   transition: border-color 0.15s, background 0.15s;
 }
 
-.previewSection:hover::after {
-  border-color: rgba(31, 169, 232, 0.55);
-  background: rgba(31, 169, 232, 0.05);
+/* Hover is a suggestion, selection is a state, so they must not look the
+   same: hover is a soft outline that follows the pointer, selection is a
+   solid one that stays after the pointer has gone. */
+.previewSection.isHovered::after {
+  border-color: rgba(31, 169, 232, 0.5);
+  background: rgba(31, 169, 232, 0.04);
 }
 
-.previewSection.isFocused::after {
-  border-color: rgba(31, 169, 232, 0.9);
+.previewSection.isSelected::after {
+  border-color: rgba(31, 169, 232, 0.95);
+  background: transparent;
+}
+
+/* Names the section being pointed at. Hidden until then, because a page
+   permanently covered in labels is not a preview of anything. */
+.previewTag {
+  position: absolute;
+  top: 0;
+  left: 0;
+  z-index: 3;
+  padding: 3px 9px;
+  border-radius: 0 0 7px 0;
+  background: #1fa9e8;
+  color: #fff;
+  font-family: system-ui, sans-serif;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+  white-space: nowrap;
+  pointer-events: none;
+  opacity: 0;
+  transform: translateY(-3px);
+  transition: opacity 0.12s, transform 0.12s;
+}
+
+.previewSection.isHovered .previewTag,
+.previewSection.isSelected .previewTag {
+  opacity: 1;
+  transform: none;
+}
+
+/* The chrome preview needs something between the navbar and the footer, or
+   the two would overlap and neither would sit where it really sits. */
+.previewChrome {
+  display: flex;
+  flex-direction: column;
+  min-height: 100vh;
+}
+
+.previewSpacer {
+  flex: 1;
+  min-height: 260px;
+  display: grid;
+  place-items: center;
+  padding: 60px 20px;
+  color: rgba(230, 238, 251, 0.35);
+  font-size: 14px;
+  letter-spacing: 0.02em;
 }

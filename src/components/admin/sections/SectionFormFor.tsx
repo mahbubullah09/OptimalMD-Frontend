@@ -84,6 +84,7 @@ export default function SectionFormFor({
       );
     case "finalCta":
       return <FinalCtaForm data={merge(finalCtaDefaults)} onChange={emit} />;
+
     default:
       return (
         <p className="alert alertWarn">

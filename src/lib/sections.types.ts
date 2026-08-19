@@ -18,6 +18,9 @@
  * attributes. Description feeds schema.org ImageObject.
  */
 export type ImageData = {
+  /** Rendered size in pixels. Either may be left unset to scale naturally. */
+  width?: number;
+  height?: number;
   src: string;
   alt: string;
   title?: string;
@@ -162,3 +165,4 @@ export type FinalCtaData = {
   ctaLabel: string;
   ctaHref: string;
 };
+

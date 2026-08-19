@@ -83,7 +83,7 @@ for (const [key, file] of Object.entries(SECTIONS)) {
     if (p === "ITEM") expanded.add("ITEM");
   }
 
-  const matches = (t) => {
+  const matches = (t, depth = 0) => {
     if (expanded.has(t)) return true;
     // group.N.field  ->  ITEM.field
     // An item path may have several segments before the index,
@@ -92,8 +92,15 @@ for (const [key, file] of Object.entries(SECTIONS)) {
     if (expanded.has(asItem)) return true;
     // group.N        ->  ITEM  (whole repeatable entry)
     if (/^[A-Za-z]+\.N$/.test(t) && (expanded.has("ITEM") || paths.has(t.split(".")[0]))) return true;
-    // SIDE.features.N -> the group itself
-    if (/\.N$/.test(t) && expanded.has(t.replace(/\.N$/, ""))) return true;
+    /*
+     * A trailing index is generated, not declared: RepeatableField and
+     * StringListField both stamp `${path}.${index}` on every row they
+     * render. So a target one index below a known path is matched, and
+     * recursing covers the nested case — cards.N.bullets.N sits two
+     * levels below the ITEM.bullets the form declares.
+     */
+    if (depth < 3 && /\.N$/.test(t))
+      return matches(t.replace(/\.N$/, ""), depth + 1);
     return false;
   };
 

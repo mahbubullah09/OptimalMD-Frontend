@@ -6,7 +6,16 @@
    the public design system's global rules apply here.
    ============================================================ */
 
-.adminRoot {
+/*
+ * Design tokens.
+ *
+ * Declared on the portal layer as well as the shell, because popovers render
+ * into <body> — outside .adminRoot — to escape the editor's scroll clipping.
+ * Without this every var() in them resolves to nothing and the panel paints
+ * transparent, which is exactly what happened.
+ */
+.adminRoot,
+.adminPortalLayer {
   --a-bg: #f4f6fa;
   --a-surface: #ffffff;
   --a-border: #e2e8f0;
@@ -17,6 +26,15 @@
   --a-danger: #dc2626;
   --a-radius: 10px;
 
+  /* Elevation, so a card reads as a card rather than a boxed rectangle. */
+  --a-shadow-sm: 0 1px 2px rgba(15, 27, 45, 0.05);
+  --a-shadow: 0 2px 8px rgba(15, 27, 45, 0.07);
+  --a-shadow-lg: 0 10px 30px rgba(15, 27, 45, 0.1);
+  /* A tint behind cards, so white cards have something to sit on. */
+  --a-sunken: #f7f9fc;
+}
+
+.adminRoot {
   min-height: 100vh;
   background: var(--a-bg);
   color: var(--a-text);
@@ -24,7 +42,19 @@
   font-size: 14px;
 }
 
-.adminRoot * {
+/* The portal layer inherits from <body>, so the typography and colour the
+   shell sets have to be restated here rather than inherited. */
+.adminPortalLayer {
+  color: var(--a-text);
+  /* The font variable is declared on <html> by next/font and inherited here.
+     The fallback is explicit because this layer's tokens must not depend on
+     anything declared outside this file. */
+  font-family: var(--font-open-sans, system-ui), system-ui, sans-serif;
+  font-size: 14px;
+}
+
+.adminRoot *,
+.adminPortalLayer * {
   box-sizing: border-box;
 }
 
@@ -112,9 +142,30 @@
 }
 
 .navLink[aria-current="page"] {
-  background: rgba(31, 169, 232, 0.2);
+  position: relative;
+  background: linear-gradient(
+    90deg,
+    rgba(31, 169, 232, 0.26),
+    rgba(31, 169, 232, 0.08)
+  );
   color: #fff;
   font-weight: 600;
+}
+
+.navLink[aria-current="page"]::before {
+  content: "";
+  position: absolute;
+  top: 7px;
+  bottom: 7px;
+  left: -4px;
+  width: 3px;
+  border-radius: 3px;
+  background: var(--a-accent);
+}
+
+.navLink[aria-current="page"] .navIcon {
+  color: #6cc9f2;
+  opacity: 1;
 }
 
 /* A group whose contents are open still marks the section you are in. */
@@ -299,41 +350,6 @@
   padding: 20px;
 }
 
-.cardGrid {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
-  gap: 14px;
-}
-
-.sectionRow {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 14px;
-  padding: 13px 16px;
-  border: 1px solid var(--a-border);
-  border-radius: 8px;
-  background: var(--a-surface);
-  text-decoration: none;
-  color: inherit;
-  transition: border-color 0.15s, box-shadow 0.15s;
-}
-
-.sectionRow:hover {
-  border-color: var(--a-accent);
-  box-shadow: 0 2px 10px rgba(11, 37, 69, 0.07);
-}
-
-.sectionRow b {
-  font-size: 14px;
-  display: block;
-}
-
-.sectionRow small {
-  color: var(--a-muted);
-  font-size: 12px;
-}
-
 .stack {
   display: flex;
   flex-direction: column;
@@ -380,9 +396,10 @@
 .input,
 .textarea {
   width: 100%;
-  padding: 9px 11px;
+  padding: 10px 12px;
   border: 1px solid var(--a-border);
-  border-radius: 8px;
+  border-radius: 9px;
+  box-shadow: var(--a-shadow-sm);
   font-size: 13.5px;
   font-family: inherit;
   color: var(--a-text);
@@ -756,7 +773,12 @@
   height: 100vh;
 }
 
+/* Reads as a toolbar rather than as more page content: it stays put while the
+   editor scrolls, and casts a small shadow over what passes beneath. */
 .wsBar {
+  position: sticky;
+  top: 0;
+  z-index: 20;
   display: flex;
   align-items: center;
   justify-content: space-between;
@@ -764,6 +786,7 @@
   padding: 12px 20px;
   background: var(--a-surface);
   border-bottom: 1px solid var(--a-border);
+  box-shadow: var(--a-shadow-sm);
   flex-wrap: wrap;
 }
 
@@ -785,29 +808,33 @@
   flex-wrap: wrap;
 }
 
+/* A track with a moving pill, rather than adjoining boxes. */
 .segmented {
   display: inline-flex;
+  gap: 2px;
+  padding: 3px;
   border: 1px solid var(--a-border);
-  border-radius: 8px;
-  overflow: hidden;
-  background: var(--a-bg);
+  border-radius: 10px;
+  background: var(--a-sunken);
 }
 
 .segmented button {
   border: none;
   background: none;
-  padding: 7px 13px;
+  padding: 6px 13px;
+  border-radius: 7px;
   font-size: 12.5px;
   font-weight: 600;
   font-family: inherit;
   color: var(--a-muted);
   cursor: pointer;
-  transition: background 0.15s, color 0.15s;
+  transition: background 0.15s, color 0.15s, box-shadow 0.15s;
 }
 
 .segmented button[aria-pressed="true"] {
   background: var(--a-accent);
   color: #fff;
+  box-shadow: var(--a-shadow-sm);
 }
 
 .segmentedWide {
@@ -830,51 +857,13 @@
 
 .wsPanel {
   border-right: 1px solid var(--a-border);
-  background: var(--a-surface);
-  padding: 16px;
+  /* Sunken rather than white: the fields and cards inside are the white
+     surfaces, and they need a ground to sit on to read as separate things. */
+  background: var(--a-sunken);
+  padding: 18px;
   overflow-y: auto;
   min-width: 0;
-}
-
-/* ---- section list ---- */
-.sectionNav {
-  display: flex;
-  flex-direction: column;
-  gap: 3px;
-  margin-bottom: 18px;
-}
-
-.sectionNavItem {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 8px;
-  padding: 8px 11px;
-  border: 1px solid transparent;
-  border-radius: 7px;
-  background: none;
-  font-family: inherit;
-  font-size: 13px;
-  color: var(--a-text);
-  cursor: pointer;
-  text-align: left;
-  transition: background 0.14s, border-color 0.14s;
-}
-
-.sectionNavItem:hover {
-  background: var(--a-bg);
-}
-
-.sectionNavItem.active {
-  background: #eaf6fd;
-  border-color: rgba(31, 169, 232, 0.4);
-  font-weight: 700;
-}
-
-.sectionNavItem em {
-  font-style: normal;
-  font-size: 11px;
-  color: var(--a-muted);
+  scrollbar-width: thin;
 }
 
 .dot {
@@ -887,22 +876,6 @@
   vertical-align: middle;
 }
 
-/* ---- form ---- */
-.wsFormHead {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 12px;
-  padding-bottom: 12px;
-  margin-bottom: 14px;
-  border-bottom: 1px solid var(--a-border);
-}
-
-.wsFormHead h2 {
-  font-size: 15px;
-  font-weight: 800;
-}
-
 .switch {
   display: inline-flex;
   align-items: center;
@@ -910,13 +883,6 @@
   font-size: 12.5px;
   color: var(--a-muted);
   cursor: pointer;
-}
-
-.wsFormFoot {
-  position: sticky;
-  bottom: 0;
-  padding: 12px 0 4px;
-  background: linear-gradient(180deg, rgba(255, 255, 255, 0), var(--a-surface) 30%);
 }
 
 .group {
@@ -947,8 +913,8 @@
 .repeatStack {
   display: flex;
   flex-direction: column;
-  gap: 6px;
-  margin-bottom: 8px;
+  gap: 8px;
+  margin-bottom: 10px;
 }
 
 .listRow {
@@ -990,11 +956,36 @@
   color: var(--a-danger);
 }
 
+/* A row is a card: white on the sunken panel, lifting on hover, and marked
+   with an accent rail once opened so the one you are editing is obvious in a
+   long nested list. */
 .repeatItem {
+  position: relative;
   border: 1px solid var(--a-border);
-  border-radius: 8px;
-  background: var(--a-bg);
-  overflow: hidden;
+  border-radius: var(--a-radius);
+  background: var(--a-surface);
+  box-shadow: var(--a-shadow-sm);
+  transition: box-shadow 0.15s, border-color 0.15s;
+}
+
+.repeatItem:hover {
+  box-shadow: var(--a-shadow);
+}
+
+.repeatItem[open] {
+  border-color: #cbe6f7;
+  box-shadow: var(--a-shadow);
+}
+
+.repeatItem[open]::before {
+  content: "";
+  position: absolute;
+  top: 10px;
+  bottom: 10px;
+  left: 0;
+  width: 3px;
+  border-radius: 0 3px 3px 0;
+  background: var(--a-accent);
 }
 
 .repeatItem > summary {
@@ -1002,7 +993,8 @@
   align-items: center;
   justify-content: space-between;
   gap: 8px;
-  padding: 9px 11px;
+  padding: 11px 13px;
+  border-radius: var(--a-radius);
   cursor: pointer;
   font-size: 13px;
   font-weight: 600;
@@ -1021,6 +1013,14 @@
 }
 
 .repeatTitle {
+  /*
+   * flex + min-width:0 is what actually makes the ellipsis work. A flex item
+   * refuses to shrink below its content by default, so "overflow: hidden"
+   * never engaged and a long row title pushed the whole inspector wider than
+   * its column — which is where the horizontal scrollbar came from.
+   */
+  flex: 1;
+  min-width: 0;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
@@ -1103,19 +1103,17 @@
 .colorBar {
   display: flex;
   align-items: center;
-  gap: 5px;
+  gap: 4px;
   flex-wrap: wrap;
   padding: 6px 8px;
   border: 1px solid var(--a-border);
   border-bottom: none;
-  border-radius: 8px 8px 0 0;
-  background: var(--a-bg);
+  border-radius: 9px 9px 0 0;
+  background: linear-gradient(#fff, var(--a-sunken));
 }
 
 .colorBar + .input,
-.colorBar + .textarea,
-.colorCustom + .input,
-.colorCustom + .textarea {
+.colorBar + .textarea {
   border-radius: 0 0 8px 8px;
 }
 
@@ -1157,36 +1155,10 @@
   outline-offset: 1px;
 }
 
-.colorCustom {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  padding: 7px 8px;
-  border: 1px solid var(--a-border);
-  border-top: none;
-  border-bottom: none;
-  background: var(--a-bg);
-}
-
-.colorCustom input[type="color"] {
-  width: 34px;
-  height: 26px;
-  padding: 0;
-  border: 1px solid var(--a-border);
-  border-radius: 5px;
-  background: none;
-  cursor: pointer;
-}
-
 /* Panel flash when a preview click jumps you to a form. */
 @keyframes wsFlash {
   0% { background: rgba(31, 169, 232, 0.16); }
   100% { background: transparent; }
-}
-
-.wsForm.isFlash {
-  animation: wsFlash 0.9s ease-out;
-  border-radius: 8px;
 }
 
 /* ---------------- inline rich-text editor ---------------- */
@@ -1433,45 +1405,6 @@
 
 .listRow {
   align-items: flex-start;
-}
-
-/* Shows the colour under the caret, with a one-click remove. */
-.activeColour {
-  display: inline-flex;
-  align-items: center;
-  gap: 4px;
-  padding: 2px 4px 2px 5px;
-  border: 1px solid var(--a-border);
-  border-radius: 6px;
-  background: #fff;
-}
-
-.activeColourDot {
-  width: 14px;
-  height: 14px;
-  border-radius: 4px;
-  border: 1px solid rgba(11, 37, 69, 0.2);
-}
-
-.activeColour button {
-  border: none;
-  background: none;
-  padding: 0 2px;
-  font-size: 14px;
-  line-height: 1;
-  color: var(--a-muted);
-  cursor: pointer;
-}
-
-.activeColour button:hover {
-  color: var(--a-danger);
-}
-
-.fmtBtnWide {
-  width: auto;
-  padding: 0 8px;
-  font-size: 11px;
-  white-space: nowrap;
 }
 
 /* A white or near-white run is invisible on the editor's light background.
@@ -1890,15 +1823,14 @@
   border: 1px solid rgba(11, 37, 69, 0.15);
 }
 
+/* Portalled to <body> and positioned with fixed coordinates, because the
+   editor panel scrolls and an absolutely positioned child of a scroll
+   container is clipped by it — which was cutting this panel in half. */
 .fmtPanel {
-  position: absolute;
-  top: calc(100% + 6px);
-  left: 0;
-  z-index: 40;
-  width: 232px;
+  z-index: 60;
   padding: 10px;
-  background: var(--a-surface);
-  border: 1px solid var(--a-border);
+  background: var(--a-surface, #fff);
+  border: 1px solid var(--a-border, #e2e8f0);
   border-radius: 10px;
   box-shadow: 0 14px 34px rgba(11, 37, 69, 0.18);
 }
@@ -1985,6 +1917,158 @@
   color: var(--a-text);
 }
 
+/* The standalone colour picker, for things that are not text. */
+.colorFieldPop {
+  display: block;
+}
+
+.colorFieldTrigger {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  width: 100%;
+  padding: 7px 10px;
+  border: 1px solid var(--a-border);
+  border-radius: 8px;
+  background: #fff;
+  color: var(--a-text);
+  font: inherit;
+  font-size: 13px;
+  text-align: left;
+  cursor: pointer;
+}
+
+.colorFieldTrigger:hover {
+  border-color: var(--a-accent);
+}
+
+.colorFieldChip {
+  width: 18px;
+  height: 18px;
+  flex-shrink: 0;
+  border: 1px solid var(--a-border);
+  border-radius: 5px;
+}
+
+/* "Default" needs to read as absence rather than as white. */
+.colorFieldChip[data-default] {
+  background:
+    linear-gradient(45deg, transparent 44%, #cbd5e1 44%, #cbd5e1 56%, transparent 56%),
+    #fff;
+}
+
+/* A cluster inside a cluster, e.g. one button's fields within Buttons. */
+.fieldSubGroup {
+  display: grid;
+  gap: 12px;
+  padding-top: 12px;
+  border-top: 1px solid var(--a-border);
+}
+
+.fieldSubGroup:first-of-type {
+  padding-top: 0;
+  border-top: 0;
+}
+
+.fieldSubGroup h5 {
+  font-size: 12.5px;
+  font-weight: 700;
+  color: var(--a-text);
+}
+
+/* Width and height sit side by side, directly under the preview they are
+   judged against. */
+.imageSizeRow {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+}
+
+/* Layout for the globals forms, which are a flat stack of fields rather
+   than the section forms' fixed arrangement. */
+.formStack {
+  display: grid;
+  gap: 16px;
+}
+
+/* A titled cluster of related fields, e.g. the navbar's two buttons. */
+.fieldGroup {
+  display: grid;
+  gap: 14px;
+  padding: 15px;
+  border: 1px solid var(--a-border);
+  border-radius: var(--a-radius);
+  background: var(--a-surface);
+  box-shadow: var(--a-shadow-sm);
+}
+
+/* A repeatable nested inside an open card sits on the tint again, so each
+   level of a three-deep menu is visibly a level. */
+.repeatItem[open] .repeatStack .repeatItem {
+  background: var(--a-sunken);
+}
+
+.repeatItem[open] .repeatStack .repeatItem[open] {
+  background: var(--a-surface);
+}
+
+.fieldGroup h4 {
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--a-muted);
+}
+
+/* Explains why a field is absent, where a disabled input would just look
+   broken — a menu entry has no address of its own. */
+.fieldNote {
+  padding: 8px 10px;
+  border-radius: 8px;
+  background: #f4f6f9;
+  color: var(--a-muted);
+  font-size: 12px;
+  line-height: 1.5;
+}
+
+/* Unsaved marker on a workspace tab. */
+.segmented button .dot {
+  display: inline-block;
+  width: 6px;
+  height: 6px;
+  margin-left: 6px;
+  vertical-align: 1px;
+  border-radius: 50%;
+  background: var(--a-accent);
+}
+
+/* A linked run inside the editor. Drawn as a span rather than an anchor so
+   the browser does not try to navigate on click or extend the link as you
+   type at its edge. */
+.rt-link {
+  text-decoration: underline;
+  text-underline-offset: 2px;
+  text-decoration-color: var(--a-accent);
+}
+
+.fmtPanelLink {
+  width: 280px;
+}
+
+.fmtPanelLink .input {
+  width: 100%;
+}
+
+.fmtLinkActions {
+  display: flex;
+  gap: 6px;
+  margin-top: 10px;
+}
+
+.fmtLinkActions .btn {
+  flex: 1;
+}
+
 /* Says what the controls below will change. Sits at the top of the panel
    because it governs every one of them. */
 .fmtScope {
@@ -2004,10 +2088,12 @@
 
 /* Pressed state for the bold/italic buttons, so the toolbar reflects the
    text under the caret rather than leaving it to be guessed. */
-.fmtBtn.isActive {
+.fmtBtn.isActive,
+.fmtBtn.isOpen {
   background: #eaf6fd;
   border-color: var(--a-accent);
   color: var(--a-accent);
+  box-shadow: inset 0 0 0 1px rgba(31, 169, 232, 0.25);
 }
 
 /* Header of the size section: names the device being edited and carries the
@@ -2125,4 +2211,546 @@
 .loginCard .btn[type="submit"] {
   width: 100%;
   margin-top: 8px;
+}
+
+/* ============================================================
+   Page builder
+
+   Three panes: layers, canvas, inspector. Each answers a different
+   question — what is on the page, what does it look like, what is this one
+   thing — so each gets its own column instead of a single scrolling stack
+   of forms that answered all three at once.
+   ============================================================ */
+
+.builder {
+  display: flex;
+  flex-direction: column;
+  height: 100vh;
+  background: var(--a-sunken);
+}
+
+/* ---- top bar ---- */
+.bTopBar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  flex-wrap: wrap;
+  padding: 10px 16px;
+  background: var(--a-surface);
+  border-bottom: 1px solid var(--a-border);
+  box-shadow: var(--a-shadow-sm);
+  z-index: 30;
+}
+
+.bTitle {
+  display: flex;
+  align-items: baseline;
+  gap: 10px;
+  min-width: 0;
+}
+
+.bTitle h1 {
+  font-size: 15px;
+  font-weight: 800;
+  letter-spacing: -0.2px;
+  white-space: nowrap;
+}
+
+.bPath {
+  color: var(--a-muted);
+  font-size: 12px;
+  font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+}
+
+/* Says there is something to publish without counting it twice — the button
+   already carries the number. */
+.bUnsaved {
+  padding: 2px 8px;
+  border-radius: 999px;
+  background: #fff7ed;
+  border: 1px solid #fed7aa;
+  color: #9a3412;
+  font-size: 10.5px;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+.bTools {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.bHistory {
+  display: inline-flex;
+  gap: 2px;
+  padding: 3px;
+  border: 1px solid var(--a-border);
+  border-radius: 10px;
+  background: var(--a-sunken);
+}
+
+.bHistory button {
+  display: grid;
+  place-items: center;
+  width: 28px;
+  height: 26px;
+  border: 0;
+  border-radius: 7px;
+  background: none;
+  color: var(--a-text);
+  cursor: pointer;
+}
+
+.bHistory button:hover:not(:disabled) {
+  background: var(--a-surface);
+  box-shadow: var(--a-shadow-sm);
+}
+
+.bHistory button:disabled {
+  color: #cbd5e1;
+  cursor: default;
+}
+
+.bHistory svg {
+  width: 15px;
+  height: 15px;
+  stroke: currentColor;
+  fill: none;
+}
+
+/* ---- three panes ---- */
+.bBody {
+  display: grid;
+  grid-template-columns: 232px 1fr 384px;
+  flex: 1;
+  min-height: 0;
+}
+
+/* ---- layers ---- */
+.bLayers {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  padding: 12px 10px;
+  border-right: 1px solid var(--a-border);
+  background: var(--a-surface);
+  overflow-y: auto;
+}
+
+.bLayersHead {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 8px 10px;
+  color: var(--a-muted);
+  font-size: 10.5px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.bLayersCount {
+  padding: 1px 7px;
+  border-radius: 999px;
+  background: var(--a-sunken);
+  font-size: 10.5px;
+}
+
+.bLayerList {
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+}
+
+.bLayerList > li {
+  position: relative;
+}
+
+.bLayer {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  padding: 1px 4px 1px 0;
+  border-radius: 8px;
+  cursor: grab;
+  transition: background 0.12s;
+}
+
+.bLayer:hover,
+.bLayer.isHovered {
+  background: var(--a-sunken);
+}
+
+.bLayer.isActive {
+  background: #eaf6fd;
+  box-shadow: inset 2px 0 0 var(--a-accent);
+}
+
+.bLayer.isDragging {
+  opacity: 0.4;
+}
+
+.bLayerGrip {
+  display: grid;
+  place-items: center;
+  width: 16px;
+  color: #cbd5e1;
+  flex-shrink: 0;
+}
+
+.bLayer:hover .bLayerGrip {
+  color: var(--a-muted);
+}
+
+.bLayerGrip svg {
+  width: 14px;
+  height: 14px;
+  fill: currentColor;
+}
+
+.bLayerName {
+  flex: 1;
+  min-width: 0;
+  padding: 7px 2px;
+  border: 0;
+  background: none;
+  color: var(--a-text);
+  font-family: inherit;
+  font-size: 12.5px;
+  text-align: left;
+  cursor: pointer;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.bLayer.isActive .bLayerName {
+  font-weight: 700;
+  color: var(--a-accent-ink);
+}
+
+/* Hidden sections stay listed — they are still part of the page — but read
+   as switched off rather than as missing. */
+.bLayer.isHidden .bLayerName {
+  color: var(--a-muted);
+  text-decoration: line-through;
+  text-decoration-color: #cbd5e1;
+}
+
+.bLayerEye {
+  display: grid;
+  place-items: center;
+  width: 24px;
+  height: 24px;
+  flex-shrink: 0;
+  border: 0;
+  border-radius: 6px;
+  background: none;
+  color: #cbd5e1;
+  cursor: pointer;
+  opacity: 0;
+  transition: opacity 0.12s, color 0.12s;
+}
+
+.bLayer:hover .bLayerEye,
+.bLayer.isActive .bLayerEye,
+.bLayerEye[aria-pressed="true"] {
+  opacity: 1;
+}
+
+.bLayerEye:hover {
+  color: var(--a-text);
+  background: var(--a-surface);
+}
+
+.bLayerEye svg {
+  width: 15px;
+  height: 15px;
+  stroke: currentColor;
+  fill: none;
+}
+
+/* A line between rows, because "before this one" is the only possible drop
+   and tinting a row would suggest dropping onto it. */
+.bDropLine {
+  position: absolute;
+  left: 6px;
+  right: 6px;
+  height: 2px;
+  border-radius: 2px;
+  background: var(--a-accent);
+  z-index: 2;
+}
+
+.bLayersHint {
+  margin-top: auto;
+  padding: 14px 8px 4px;
+  color: var(--a-muted);
+  font-size: 11px;
+  line-height: 1.5;
+}
+
+/* ---- canvas ---- */
+.bCanvas {
+  min-width: 0;
+  overflow: auto;
+  display: flex;
+  justify-content: center;
+  align-items: flex-start;
+  padding: 24px;
+  /* A workbench, not a page: the frame has to read as an object sitting on
+     something rather than as the screen itself. */
+  background:
+    radial-gradient(circle at 1px 1px, rgba(15, 27, 45, 0.07) 1px, transparent 0)
+      0 0 / 16px 16px,
+    #eef2f7;
+}
+
+.bStageBox {
+  flex-shrink: 0;
+}
+
+.bStage {
+  /* The frame renders at its true CSS width so media queries behave, then is
+     scaled down visually to fit the pane. */
+  transform-origin: top center;
+}
+
+/* ---- inspector ---- */
+.bInspector {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  padding: 12px;
+  gap: 10px;
+  border-left: 1px solid var(--a-border);
+  background: var(--a-sunken);
+  overflow: hidden;
+}
+
+.bInspectorTabs {
+  width: 100%;
+}
+
+.bInspectorTabs button {
+  flex: 1;
+}
+
+.bPanel {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  min-height: 0;
+  border: 1px solid var(--a-border);
+  border-radius: var(--a-radius);
+  background: var(--a-surface);
+  box-shadow: var(--a-shadow-sm);
+  overflow: hidden;
+}
+
+.bPanel.isFlash {
+  animation: wsFlash 0.9s ease-out;
+}
+
+.bPanelHead {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 12px 14px;
+  border-bottom: 1px solid var(--a-border);
+  background: var(--a-surface);
+}
+
+.bPanelHead h2 {
+  font-size: 14px;
+  font-weight: 800;
+  letter-spacing: -0.2px;
+}
+
+/* Scrolls on its own, so the section name and the save button stay put while
+   a long form moves under them. */
+.bPanelBody {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+  padding: 14px;
+  scrollbar-width: thin;
+}
+
+.bPanelFoot {
+  padding: 10px 14px;
+  border-top: 1px solid var(--a-border);
+  background: var(--a-surface);
+}
+
+.bPanelFoot .btn {
+  width: 100%;
+}
+
+.bEmpty {
+  padding: 24px 14px;
+  color: var(--a-muted);
+  font-size: 13px;
+  text-align: center;
+}
+
+/* ---- narrow screens ---- */
+@media (max-width: 1280px) {
+  .bBody {
+    grid-template-columns: 200px 1fr 340px;
+  }
+}
+
+@media (max-width: 1024px) {
+  .builder {
+    height: auto;
+  }
+
+  .bBody {
+    grid-template-columns: 1fr;
+  }
+
+  .bLayers,
+  .bInspector {
+    border-left: 0;
+    border-right: 0;
+    border-bottom: 1px solid var(--a-border);
+    overflow: visible;
+  }
+
+  .bPanelBody {
+    overflow: visible;
+  }
+
+  .bCanvas {
+    min-height: 60vh;
+  }
+}
+
+/* ============================================================
+   Icons and the fixes that came with them
+   ============================================================ */
+
+/* One size and weight everywhere, so a row of controls lines up. Buttons
+   centre their contents rather than relying on the glyph's own metrics,
+   which is what made the old text arrows sit at different heights. */
+.icn {
+  width: 15px;
+  height: 15px;
+  flex-shrink: 0;
+}
+
+.iconBtn,
+.fmtBtn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+/* A chevron that turns, rather than one glyph swapped for another. */
+.icnChevron {
+  transition: transform 0.16s ease;
+}
+
+.seoChevron {
+  width: 13px;
+  height: 13px;
+  color: var(--a-muted);
+}
+
+.seoGroupHead[aria-expanded="true"] .seoChevron,
+.iconTrigger[aria-expanded="true"] .pickerChevron,
+.repeatItem[open] > summary .repeatChevron {
+  transform: rotate(90deg);
+}
+
+.repeatChevron {
+  width: 13px;
+  height: 13px;
+  color: var(--a-muted);
+  margin-right: -2px;
+}
+
+.pickerChevron {
+  width: 13px;
+  height: 13px;
+  color: var(--a-muted);
+}
+
+/* The formatting toolbar. Bold and italic are letterforms on purpose — every
+   editor draws them that way — so the icon buttons are sized to match their
+   optical weight rather than to a nominal box. */
+.fmtBtn {
+  width: 27px;
+  height: 26px;
+}
+
+.fmtBtn svg:not(.icn) {
+  width: 16px;
+  height: 16px;
+  stroke: currentColor;
+  fill: none;
+}
+
+.fmtTrigger {
+  width: 29px;
+  height: 26px;
+}
+
+.fmtTriggerGlyph {
+  font-size: 13px;
+  font-weight: 700;
+  line-height: 1;
+}
+
+/* The colour bar under the A: a swatch, so it has to keep its shape at any
+   width rather than collapsing to a hairline. */
+.fmtTriggerBar {
+  width: 15px;
+  height: 3px;
+  border-radius: 2px;
+  border: 1px solid rgba(15, 27, 45, 0.12);
+}
+
+/* ---- the layer rail ---- */
+
+/* Selection is carried by the fill and the weight alone. The rail duplicated
+   that and, at this size, read as a stray border. */
+.bLayer.isActive {
+  box-shadow: none;
+}
+
+/* ---- no sideways scrolling in the inspector ---- */
+
+/*
+ * A long unbroken string — a URL in the SEO preview, a filename — was pushing
+ * the panel wider than its column and producing a horizontal scrollbar under
+ * everything. Clipping alone would hide the overflow without fixing it, so
+ * the words are allowed to break instead, and the grid children are told they
+ * may be narrower than their content.
+ */
+.bInspector,
+.bPanel,
+.bPanelBody {
+  min-width: 0;
+  overflow-x: hidden;
+}
+
+.bPanelBody .seoPreview,
+.bPanelBody .seoPreviewUrl,
+.bPanelBody .mono,
+.bPanelBody code {
+  overflow-wrap: anywhere;
+  word-break: break-word;
+}
+
+.bPanelBody .input,
+.bPanelBody .textarea {
+  max-width: 100%;
 }

@@ -1,6 +1,7 @@
 "use client";
 
 import type { ReactNode } from "react";
+import { ArrowDownIcon, ArrowUpIcon, ChevronIcon, CloseIcon } from "../icons";
 import RichTextEditor from "./RichTextEditor";
 
 /**
@@ -218,7 +219,7 @@ export function StringListField({
               disabled={i === 0}
               onClick={() => onChange(moveItem(value, i, i - 1))}
             >
-              ↑
+              <ArrowUpIcon />
             </button>
             <button
               type="button"
@@ -227,7 +228,7 @@ export function StringListField({
               disabled={i === value.length - 1}
               onClick={() => onChange(moveItem(value, i, i + 1))}
             >
-              ↓
+              <ArrowDownIcon />
             </button>
             <button
               type="button"
@@ -235,7 +236,7 @@ export function StringListField({
               aria-label={`Remove "${item}"`}
               onClick={() => onChange(value.filter((_, j) => j !== i))}
             >
-              ✕
+              <CloseIcon />
             </button>
           </div>
         ))}
@@ -304,6 +305,7 @@ export function RepeatableField<T>({
             data-field-path={path ? `${path}.${i}` : undefined}
           >
             <summary>
+              <ChevronIcon className="repeatChevron" />
               <span className="repeatTitle">{itemTitle(item, i) || `Item ${i + 1}`}</span>
               <span className="repeatTools">
                 <button
@@ -316,7 +318,7 @@ export function RepeatableField<T>({
                     onChange(moveItem(value, i, i - 1));
                   }}
                 >
-                  ↑
+                  <ArrowUpIcon />
                 </button>
                 <button
                   type="button"
@@ -328,7 +330,7 @@ export function RepeatableField<T>({
                     onChange(moveItem(value, i, i + 1));
                   }}
                 >
-                  ↓
+                  <ArrowDownIcon />
                 </button>
                 <button
                   type="button"
@@ -339,7 +341,7 @@ export function RepeatableField<T>({
                     onChange(value.filter((_, j) => j !== i));
                   }}
                 >
-                  ✕
+                  <CloseIcon />
                 </button>
               </span>
             </summary>

@@ -1,15 +1,15 @@
 "use client";
 
 import { useState } from "react";
-import { ASSETS, ORG } from "@/lib/site";
-import {
-  hasDropdown,
-  isBranch,
-  type NavDropdownItem,
-  navActions,
-  navEntries,
-} from "./nav.data";
+import { backgroundStyle, buttonStyle } from "@/lib/appearance";
+import type { NavData, NavItem } from "@/lib/globals.types";
+import { plainText } from "@/lib/markerParser";
+import { richText } from "@/lib/richText";
+import { navDefaults } from "./nav.data";
 import styles from "./Navbar.module.css";
+
+/** An item with children is a menu; without them it is a link. */
+const hasChildren = (item: NavItem) => item.children.length > 0;
 
 const CaretDown = ({ className }: { className?: string }) => (
   <svg className={className} viewBox="0 0 20 20" aria-hidden>
@@ -30,12 +30,12 @@ const CaretRight = ({ className }: { className?: string }) => (
 );
 
 /** Desktop dropdown row — a link, or a branch that reveals a flyout on hover. */
-function DropdownRow({ item }: { item: NavDropdownItem }) {
-  if (!isBranch(item)) {
+function DropdownRow({ item, path }: { item: NavItem; path: string }) {
+  if (!hasChildren(item)) {
     return (
       <li>
-        <a href={item.href} className={styles.dropdownItem}>
-          {item.label}
+        <a href={item.href} className={styles.dropdownItem} data-preview-field={`${path}.label`}>
+          {richText(item.label)}
         </a>
       </li>
     );
@@ -43,15 +43,24 @@ function DropdownRow({ item }: { item: NavDropdownItem }) {
 
   return (
     <li className={styles.hasFlyout}>
-      <button type="button" className={styles.dropdownItem} aria-haspopup="true">
-        {item.label}
+      <button
+        type="button"
+        className={styles.dropdownItem}
+        aria-haspopup="true"
+        data-preview-field={`${path}.label`}
+      >
+        {richText(item.label)}
         <CaretRight className={styles.caretRight} />
       </button>
       <ul className={`${styles.flyout}${item.flyoutLeft ? ` ${styles.flyoutLeft}` : ""}`}>
-        {item.children.map((child) => (
+        {item.children.map((child, childIndex) => (
           <li key={child.label}>
-            <a href={child.href} className={styles.flyoutItem}>
-              {child.label}
+            <a
+              href={child.href}
+              className={styles.flyoutItem}
+              data-preview-field={`${path}.children.${childIndex}.label`}
+            >
+              {richText(child.label)}
             </a>
           </li>
         ))}
@@ -60,7 +69,8 @@ function DropdownRow({ item }: { item: NavDropdownItem }) {
   );
 }
 
-export default function Navbar() {
+export default function Navbar({ data = navDefaults }: { data?: NavData }) {
+  const { logo, homeHref, entries, login, cta, appearance } = data;
   const [menuOpen, setMenuOpen] = useState(false);
   /** Labels of the mobile accordions currently expanded. */
   const [expanded, setExpanded] = useState<string[]>([]);
@@ -73,14 +83,19 @@ export default function Navbar() {
   const isOpen = (label: string) => expanded.includes(label);
 
   return (
-    <nav className={styles.nav} aria-label="Main">
+    <nav className={styles.nav} aria-label="Main" style={backgroundStyle(appearance)}>
       <div className={styles.navInner}>
-        <a href={ORG.url} className={styles.logo}>
+        <a href={homeHref} className={styles.logo}>
           {/* eslint-disable-next-line @next/next/no-img-element */}
           <img
-            src={ASSETS.logo}
-            alt="OptimalMD Logo"
-            height={52}
+            src={logo.src}
+            alt={plainText(logo.alt)}
+            title={logo.title || undefined}
+            data-preview-field="nav.logo"
+            style={{
+              height: logo.height ?? 52,
+              ...(logo.width ? { width: logo.width } : {}),
+            }}
             loading="eager"
             decoding="sync"
             fetchPriority="high"
@@ -88,12 +103,17 @@ export default function Navbar() {
         </a>
 
         <ul className={styles.navMenu}>
-          {navEntries.map((entry) => (
+          {entries.map((entry, entryIndex) => (
             <li className={styles.navItem} key={entry.label}>
-              {hasDropdown(entry) ? (
+              {hasChildren(entry) ? (
                 <>
-                  <button type="button" className={styles.navLink} aria-haspopup="true">
-                    {entry.label}
+                  <button
+                    type="button"
+                    className={styles.navLink}
+                    aria-haspopup="true"
+                    data-preview-field={`nav.entries.${entryIndex}.label`}
+                  >
+                    {richText(entry.label)}
                     <CaretDown className={styles.caret} />
                   </button>
                   <ul
@@ -101,14 +121,22 @@ export default function Navbar() {
                       entry.alignRight ? ` ${styles.dropdownRight}` : ""
                     }`}
                   >
-                    {entry.children.map((item) => (
-                      <DropdownRow item={item} key={item.label} />
+                    {entry.children.map((item, itemIndex) => (
+                      <DropdownRow
+                        item={item}
+                        path={`nav.entries.${entryIndex}.children.${itemIndex}`}
+                        key={item.label}
+                      />
                     ))}
                   </ul>
                 </>
               ) : (
-                <a href={entry.href} className={styles.navLink}>
-                  {entry.label}
+                <a
+                  href={entry.href}
+                  className={styles.navLink}
+                  data-preview-field={`nav.entries.${entryIndex}.label`}
+                >
+                  {richText(entry.label)}
                 </a>
               )}
             </li>
@@ -116,11 +144,21 @@ export default function Navbar() {
         </ul>
 
         <div className={styles.navActions}>
-          <a href={navActions.login} className={styles.btnLogin}>
-            Login
+          <a
+            href={login.href}
+            className={styles.btnLogin}
+            data-preview-field="nav.login.label"
+            style={buttonStyle(login.appearance)}
+          >
+            {richText(login.label)}
           </a>
-          <a href={navActions.getStarted} className={styles.btnEnroll}>
-            Get Started
+          <a
+            href={cta.href}
+            className={styles.btnEnroll}
+            data-preview-field="nav.cta.label"
+            style={buttonStyle(cta.appearance)}
+          >
+            {richText(cta.label)}
           </a>
         </div>
 
@@ -140,8 +178,8 @@ export default function Navbar() {
 
       {/* MOBILE MENU */}
       <div id="mobile-menu" className={`${styles.mobileMenu}${menuOpen ? ` ${styles.open}` : ""}`}>
-        {navEntries.map((entry) =>
-          hasDropdown(entry) ? (
+        {entries.map((entry) =>
+          hasChildren(entry) ? (
             <div key={entry.label}>
               <button
                 type="button"
@@ -149,7 +187,7 @@ export default function Navbar() {
                 aria-expanded={isOpen(entry.label)}
                 onClick={() => toggle(entry.label)}
               >
-                {entry.label}
+                {richText(entry.label)}
                 <CaretDown className={styles.caret} />
               </button>
 
@@ -157,7 +195,7 @@ export default function Navbar() {
                 className={`${styles.mobSubmenu}${isOpen(entry.label) ? ` ${styles.open}` : ""}`}
               >
                 {entry.children.map((item) =>
-                  isBranch(item) ? (
+                  hasChildren(item) ? (
                     <div key={item.label}>
                       <button
                         type="button"
@@ -167,7 +205,7 @@ export default function Navbar() {
                         aria-expanded={isOpen(item.label)}
                         onClick={() => toggle(item.label)}
                       >
-                        {item.label}
+                        {richText(item.label)}
                         <CaretDown className={styles.caret} />
                       </button>
                       <div
@@ -177,14 +215,14 @@ export default function Navbar() {
                       >
                         {item.children.map((child) => (
                           <a href={child.href} className={styles.mobFlyItem} key={child.label}>
-                            {child.label}
+                            {richText(child.label)}
                           </a>
                         ))}
                       </div>
                     </div>
                   ) : (
                     <a href={item.href} className={styles.mobSubItem} key={item.label}>
-                      {item.label}
+                      {richText(item.label)}
                     </a>
                   ),
                 )}
@@ -192,17 +230,17 @@ export default function Navbar() {
             </div>
           ) : (
             <a href={entry.href} className={styles.mobItem} key={entry.label}>
-              {entry.label}
+              {richText(entry.label)}
             </a>
           ),
         )}
 
         <div className={styles.mobActions}>
-          <a href={navActions.login} className={styles.btnLogin}>
-            Login
+          <a href={login.href} className={styles.btnLogin} style={buttonStyle(login.appearance)}>
+            {richText(login.label)}
           </a>
-          <a href={navActions.getStarted} className={styles.btnEnroll}>
-            Get Started
+          <a href={cta.href} className={styles.btnEnroll} style={buttonStyle(cta.appearance)}>
+            {richText(cta.label)}
           </a>
         </div>
       </div>

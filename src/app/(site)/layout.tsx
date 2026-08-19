@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import Footer from "@/components/layout/Footer/Footer";
 import Navbar from "@/components/layout/Navbar/Navbar";
+import { getGlobals } from "@/lib/globals";
 
 const OG_IMAGE =
   "https://assets.cdn.filesafe.space/fXZotDuybTTvQxQ4Yxkp/media/6a406189d50c4ff1841c7847.png";
@@ -28,13 +29,17 @@ export const metadata: Metadata = {
   },
 };
 
-export default function SiteLayout({ children }: { children: React.ReactNode }) {
+export default async function SiteLayout({ children }: { children: React.ReactNode }) {
+  // Falls back to the transcribed defaults if the API is unreachable, so the
+  // header and footer render either way.
+  const { nav, footer } = await getGlobals();
+
   return (
     <>
       <div className="bg-texture" aria-hidden />
-      <Navbar />
+      <Navbar data={nav} />
       {children}
-      <Footer />
+      <Footer data={footer} />
     </>
   );
 }

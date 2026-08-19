@@ -59,7 +59,7 @@ export type PageSeo = {
   twitterCard: TwitterCard;
   noindex: boolean;
   nofollow: boolean;
-  schema: PageSchema;
+  structuredData: PageSchema;
 };
 
 /** Fills gaps in a page loaded before these fields existed. */
@@ -71,12 +71,12 @@ export const withSeoDefaults = (seo: Partial<PageSeo> | undefined): PageSeo => (
   noindex: false,
   nofollow: false,
   ...seo,
-  schema: {
+  structuredData: {
     organization: { enabled: true },
     webPage: { enabled: true, type: "WebPage" },
     faq: { enabled: false, items: [] },
     breadcrumbs: { enabled: false, items: [] },
-    ...seo?.schema,
+    ...seo?.structuredData,
   },
 });
 

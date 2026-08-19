@@ -4,6 +4,7 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import type { ColorSpec, ResponsiveSize } from "@/lib/markerParser";
 import { usePreviewDevice } from "../DeviceContext";
 import ColorPopover from "./ColorPopover";
+import LinkPopover from "./LinkPopover";
 import { restoreRange, selectionRange, type TextRange } from "./domOffsets";
 import {
   htmlToMarker,
@@ -43,6 +44,13 @@ import {
  */
 
 type Scope = "selection" | "phrase" | "field";
+
+/** Repeated in the link panel, which has no room for the colour panel's copy. */
+const SCOPE_NOTE: Record<Scope, string> = {
+  selection: "Applies to the selected text.",
+  phrase: "Applies to this phrase.",
+  field: "Nothing selected, so this applies to the whole field.",
+};
 
 export default function RichTextEditor({
   label,
@@ -110,7 +118,7 @@ export default function RichTextEditor({
     // A caret inside styled text targets that phrase, so a colour or size can
     // be changed without selecting the word again.
     const run = runAt(value, selection.start);
-    if (run && (run.style.color || run.style.size)) {
+    if (run && (run.style.color || run.style.size || run.style.href)) {
       return { range: { start: run.start, end: run.end }, scope: "phrase" };
     }
     return null;
@@ -171,6 +179,10 @@ export default function RichTextEditor({
       size: Object.keys(size).length > 0 ? size : undefined,
     }));
 
+  const applyLink = (href: string) => applyStyle((style) => ({ ...style, href }));
+
+  const removeLink = () => applyStyle((style) => ({ ...style, href: undefined }));
+
   const clearFormatting = () =>
     applyStyle((style) => ({ ...style, color: undefined, size: undefined }));
 
@@ -209,6 +221,13 @@ export default function RichTextEditor({
         >
           <i>I</i>
         </button>
+
+        <LinkPopover
+          href={info.href}
+          scopeNote={SCOPE_NOTE[scope]}
+          onApply={applyLink}
+          onRemove={removeLink}
+        />
 
         <span className="fmtDivider" />
 

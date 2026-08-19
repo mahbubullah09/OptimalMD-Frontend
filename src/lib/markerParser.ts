@@ -26,6 +26,7 @@ export type MarkerNode =
   | { type: "break" }
   | { type: "color"; spec: ColorSpec | null; children: MarkerNode[] }
   | { type: "size"; size: ResponsiveSize; children: MarkerNode[] }
+  | { type: "link"; href: string; children: MarkerNode[] }
   | { type: "bold"; children: MarkerNode[] }
   | { type: "italic"; children: MarkerNode[] };
 
@@ -37,6 +38,36 @@ export type MarkerNode =
  * value, which is what you want when a figure has to match a spec — at the
  * cost of not shrinking on small screens.
  */
+/**
+ * Schemes an editor may link to.
+ *
+ * An allowlist, not a denylist: CMS text reaches an `href` attribute, so
+ * `javascript:` and `data:` must never survive parsing, and enumerating what
+ * is permitted is the only way to be sure of that as new schemes appear.
+ */
+const SAFE_SCHEMES = ["http:", "https:", "mailto:", "tel:"];
+
+/** Returns a usable href, or null when the value is not safe to emit. */
+export function safeHref(raw: string): string | null {
+  const value = raw.trim();
+  if (!value) return null;
+
+  // Relative and anchor links have no scheme to check.
+  if (value.startsWith("/") || value.startsWith("#") || value.startsWith("?")) return value;
+
+  try {
+    // A base is required for parsing, and is discarded — only the scheme of
+    // the value itself is consulted.
+    const url = new URL(value, "https://optimalmd.com");
+    if (!SAFE_SCHEMES.includes(url.protocol)) return null;
+    // Reject anything that only *looked* absolute, e.g. "javascript:alert(1)"
+    // resolving against the base.
+    return value;
+  } catch {
+    return null;
+  }
+}
+
 export type SizeUnit = "em" | "px";
 export type SizeValue = { value: number; unit: SizeUnit };
 
@@ -197,7 +228,16 @@ export function parseMarkers(input: string): MarkerNode[] {
         const head = input.slice(i + 2, pipe);
         const body = input.slice(pipe + 1, close);
 
-        if (head.startsWith("size:") || head.startsWith("px:")) {
+        if (head.startsWith("link:")) {
+          const href = safeHref(head.slice(5));
+          // An unusable URL still shows its text — a rejected link should cost
+          // the link, not the sentence.
+          nodes.push(
+            href === null
+              ? { type: "color", spec: null, children: parseMarkers(body) }
+              : { type: "link", href, children: parseMarkers(body) },
+          );
+        } else if (head.startsWith("size:") || head.startsWith("px:")) {
           const size = parseSizeHead(head);
           // An unreadable size keeps the text at its normal size rather than
           // dropping the words.
@@ -270,4 +310,32 @@ export function specToMarker(spec: ColorSpec): string {
   if (spec.kind === "tone") return spec.tone;
   if (spec.kind === "solid") return spec.color;
   return `grad:${spec.from},${spec.to}`;
+}
+
+/**
+ * The words of a marker string, with all formatting removed.
+ *
+ * Needed wherever marker text has to appear somewhere that cannot render
+ * elements: a collapsed row's title in the editor, an `aria-label`, an image's
+ * `alt`. Showing the raw `{{blue|Plans}}` in those places would leak the
+ * syntax back into an editor that exists to hide it.
+ */
+export function plainText(input: string | undefined | null): string {
+  if (!input) return "";
+
+  const walk = (nodes: MarkerNode[]): string =>
+    nodes
+      .map((node) => {
+        switch (node.type) {
+          case "text":
+            return node.value;
+          case "break":
+            return " ";
+          default:
+            return walk(node.children);
+        }
+      })
+      .join("");
+
+  return walk(parseMarkers(input)).trim();
 }

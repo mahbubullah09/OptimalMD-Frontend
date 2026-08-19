@@ -20,6 +20,7 @@ import {
   parseMarkers,
   parseSizeHead,
   type ResponsiveSize,
+  safeHref,
   sizeToMarker,
   sizeToVars,
   specToMarker,
@@ -58,7 +59,13 @@ export function isLightSpec(spec: ColorSpec): boolean {
 const escapeHtml = (text: string) =>
   text.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
 
-export type Style = { color?: ColorSpec; size?: ResponsiveSize; bold?: boolean; italic?: boolean };
+export type Style = {
+  color?: ColorSpec;
+  size?: ResponsiveSize;
+  href?: string;
+  bold?: boolean;
+  italic?: boolean;
+};
 export type Run = { text: string; style: Style };
 
 /** Inline styles that make a run look right inside the editor. */
@@ -110,6 +117,7 @@ const sameSize = (a?: ResponsiveSize, b?: ResponsiveSize) =>
 const sameStyle = (a: Style, b: Style) =>
   sameColor(a.color, b.color) &&
   sameSize(a.size, b.size) &&
+  (a.href ?? "") === (b.href ?? "") &&
   !!a.bold === !!b.bold &&
   !!a.italic === !!b.italic;
 
@@ -143,6 +151,9 @@ function flatten(nodes: MarkerNode[], inherited: Style = {}): Run[] {
       case "size":
         // Innermost size wins, exactly as colour does.
         runs.push(...flatten(node.children, { ...inherited, size: node.size }));
+        break;
+      case "link":
+        runs.push(...flatten(node.children, { ...inherited, href: node.href }));
         break;
     }
   }
@@ -181,7 +192,9 @@ export function runsToMarker(runs: Run[]): string {
       // Size sits inside the colour marker; the parser nests, so both apply.
       const size = style.size ? sizeToMarker(style.size) : "";
       if (size) body = `{{${size}|${body}}}`;
-      return style.color ? `{{${specToMarker(style.color)}|${body}}}` : body;
+      if (style.color) body = `{{${specToMarker(style.color)}|${body}}}`;
+      // The link wraps outermost, so colour and size still apply to its text.
+      return style.href ? `{{link:${style.href}|${body}}}` : body;
     })
     .join("");
 }
@@ -199,13 +212,22 @@ export function runsToHtml(runs: Run[], device: Breakpoint = "desktop"): string 
         // sees in the editor, and follows the device they are targeting.
         inner = `<span class="rt-size" data-size="${escapeHtml(size)}" style="${sizeCss(style.size as ResponsiveSize, device)}">${inner}</span>`;
       }
-      if (!style.color) return inner;
+      if (style.color) {
+        const attr = specDataAttr(style.color);
+        // Light runs get a dark chip so they stay legible while editing; this
+        // is an editor-only affordance and never reaches the published page.
+        const light = isLightSpec(style.color) ? ' data-light="1"' : "";
+        inner = `<span ${attr.name}="${attr.value}"${light} style="${specStyle(style.color)}">${inner}</span>`;
+      }
 
-      const attr = specDataAttr(style.color);
-      // Light runs get a dark chip so they stay legible while editing; this is
-      // an editor-only affordance and never reaches the published page.
-      const light = isLightSpec(style.color) ? ' data-light="1"' : "";
-      return `<span ${attr.name}="${attr.value}"${light} style="${specStyle(style.color)}">${inner}</span>`;
+      // Rendered as a span, not an anchor: a real <a> inside a contentEditable
+      // invites the browser to navigate on click and to extend the link when
+      // you type at its edge.
+      if (style.href) {
+        inner = `<span class="rt-link" data-href="${escapeHtml(style.href)}">${inner}</span>`;
+      }
+
+      return inner;
     })
     .join("");
 }
@@ -260,6 +282,13 @@ export function htmlToRuns(root: Node): Run[] {
     const next: Style = { ...style };
     const color = readColor(el);
     if (color) next.color = color;
+
+    const href = el.getAttribute("data-href") ?? (el.tagName === "A" ? el.getAttribute("href") : null);
+    if (href) {
+      // Re-validated on the way in: pasted markup could carry any scheme.
+      const safe = safeHref(href);
+      if (safe) next.href = safe;
+    }
 
     const sizeAttr = el.getAttribute("data-size");
     if (sizeAttr) {
@@ -371,6 +400,7 @@ export function summarise(
   colorMixed: boolean;
   size: ResponsiveSize;
   sizeMixed: boolean;
+  href: string;
   bold: boolean;
   italic: boolean;
 } {
@@ -395,13 +425,24 @@ export function summarise(
   }
 
   if (covered.length === 0) {
-    return { color: null, colorMixed: false, size: {}, sizeMixed: false, bold: false, italic: false };
+    return {
+      color: null,
+      colorMixed: false,
+      size: {},
+      sizeMixed: false,
+      href: "",
+      bold: false,
+      italic: false,
+    };
   }
 
   const colorKeys = new Set(covered.map((r) => (r.style.color ? specToMarker(r.style.color) : "")));
   const sizeKeys = new Set(covered.map((r) => (r.style.size ? sizeToMarker(r.style.size) : "")));
 
+  const hrefs = new Set(covered.map((r) => r.style.href ?? ""));
+
   return {
+    href: hrefs.size === 1 ? (covered[0]?.style.href ?? "") : "",
     color: colorKeys.size === 1 ? (covered[0]?.style.color ?? null) : null,
     colorMixed: colorKeys.size > 1,
     size: sizeKeys.size === 1 ? (covered[0]?.style.size ?? {}) : {},
