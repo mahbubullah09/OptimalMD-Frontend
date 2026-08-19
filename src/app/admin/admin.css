@@ -1059,7 +1059,8 @@
 /* ---- preview ---- */
 .wsPreview {
   background: #cbd5e1;
-  overflow: auto;
+  overflow-x: hidden;
+  overflow-y: auto;
   min-width: 0;
   display: flex;
   /* Auto margin rather than justify-content, so a frame wider than the pane
@@ -1076,8 +1077,10 @@
 
 .wsPreviewStage {
   /* The frame renders at its true CSS width so media queries behave, then is
-     scaled down visually to fit the pane. */
-  transform-origin: top center;
+     scaled down visually to fit the pane. Anchored top left so the scaled box
+     lands exactly on its container — scaling about the centre offsets it by
+     half the difference and overflows to the right. */
+  transform-origin: top left;
 }
 
 .previewFrame {
@@ -2519,7 +2522,10 @@
 /* ---- canvas ---- */
 .bCanvas {
   min-width: 0;
-  overflow: auto;
+  /* Vertical only: the frame is fitted to the width, so anything sideways
+     would be a bug rather than something to scroll to. */
+  overflow-x: hidden;
+  overflow-y: auto;
   display: flex;
   /*
    * Centred with an auto margin on the child rather than justify-content.
@@ -2545,8 +2551,10 @@
 
 .bStage {
   /* The frame renders at its true CSS width so media queries behave, then is
-     scaled down visually to fit the pane. */
-  transform-origin: top center;
+     scaled down visually to fit the pane. Anchored top left so the scaled box
+     lands exactly on its container — scaling about the centre offsets it by
+     half the difference and overflows to the right. */
+  transform-origin: top left;
 }
 
 /* ---- inspector ---- */
@@ -2887,6 +2895,24 @@
   height: 14px;
   stroke: currentColor;
   fill: none;
+}
+
+/* Sign out: an icon beside the label, so it survives the sidebar collapsing
+   to a rail rather than becoming an empty square. */
+.logoutButton {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  width: 100%;
+  color: #e6eefb;
+  border-color: rgba(255, 255, 255, 0.18);
+}
+
+.logoutButton .navIcon {
+  width: 16px;
+  height: 16px;
+  flex-shrink: 0;
 }
 
 /* ---- layers, collapsed to a rail ---- */
