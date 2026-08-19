@@ -2808,21 +2808,41 @@
   padding: 2px 0 14px;
 }
 
+/* The wordmark cannot fit, so only the mark is shown — the logo is cropped to
+   its left edge rather than squeezed. */
 .shell.isRail .brandLogo {
-  height: 28px;
+  height: 30px;
+  width: 34px;
+  object-fit: cover;
+  object-position: left center;
 }
 
 /* Labels, counts and the filter are what a rail cannot show; the icons that
    identify each destination stay. */
+.shell.isRail .navText,
 .shell.isRail .navLabel,
 .shell.isRail .navCount,
 .shell.isRail .navChevron,
 .shell.isRail .navFilter,
 .shell.isRail .navChildren,
 .shell.isRail .navEmpty,
-.shell.isRail .whoText,
-.shell.isRail .logoutButton span {
+.shell.isRail .whoText {
   display: none;
+}
+
+/* Nothing in the rail may be wider than the rail. A label that overflows is
+   what made the collapsed sidebar read as broken rather than as compact. */
+.shell.isRail .sidebar,
+.shell.isRail .navRoot,
+.shell.isRail .navLink,
+.shell.isRail .sidebarFoot {
+  overflow: hidden;
+}
+
+.shell.isRail .logoutButton {
+  width: 38px;
+  min-width: 0;
+  padding: 8px 0;
 }
 
 .shell.isRail .navLink {

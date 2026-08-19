@@ -75,10 +75,11 @@ export default function SidebarNav({ pages }: { pages: NavPage[] }) {
       <Link
         href="/admin"
         className="navLink"
+        title="Dashboard"
         aria-current={pathname === "/admin" ? "page" : undefined}
       >
         <DashboardIcon />
-        Dashboard
+        <span className="navText">Dashboard</span>
       </Link>
 
       <div className="navLabel">Content</div>
@@ -88,21 +89,23 @@ export default function SidebarNav({ pages }: { pages: NavPage[] }) {
       <Link
         href="/admin/site"
         className="navLink"
+        title="Navigation &amp; footer"
         aria-current={pathname === "/admin/site" ? "page" : undefined}
       >
         <ChromeIcon />
-        Navigation &amp; footer
+        <span className="navText">Navigation &amp; footer</span>
       </Link>
 
       <div className={`navGroup${openPages ? " isOpen" : ""}`}>
         <button
           type="button"
           className={`navLink navGroupHead${inPages ? " isCurrent" : ""}`}
+          title="Pages"
           aria-expanded={openPages}
           onClick={() => setOpenPages((v) => !v)}
         >
           <PagesIcon />
-          Pages
+          <span className="navText">Pages</span>
           <span className="navCount">{pages.length}</span>
           <Chevron open={openPages} />
         </button>
