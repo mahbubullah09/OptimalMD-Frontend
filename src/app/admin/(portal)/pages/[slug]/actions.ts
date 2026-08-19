@@ -1,11 +1,28 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
-import { ApiRequestError, apiFetch } from "@/lib/api";
 import { getSessionToken } from "@/lib/adminSession";
+import { ApiRequestError, apiFetch } from "@/lib/api";
 import type { PageSection, PageSeo } from "@/lib/content.types";
+import { revalidatePage } from "@/lib/revalidate";
 
 export type ActionResult = { ok: true; revalidated: boolean } | { ok: false; error: string };
+
+/**
+ * Clears the live page's cache from here, rather than relying on the backend
+ * to call back.
+ *
+ * These actions run on this deployment, so the admin can drop its own cache
+ * directly. The backend's webhook still fires, but it needs a URL and a shared
+ * secret configured on another service to work at all — and when either is
+ * missing it fails silently, which is how an edit ends up saved and invisible.
+ * Doing it here removes that whole class of failure, and covers every change
+ * equally: copy, colour, text size, images, ordering, SEO.
+ */
+function publish(slug: string) {
+  revalidatePage(slug);
+  revalidatePath(`/admin/pages/${slug}`);
+}
 
 /**
  * Server actions rather than client fetches, because the admin's bearer token
@@ -24,7 +41,7 @@ const toMessage = (err: unknown) =>
 
 export async function saveSeo(slug: string, seo: PageSeo): Promise<ActionResult> {
   try {
-    const { revalidated } = await withToken((token) =>
+    await withToken((token) =>
       apiFetch<{ revalidated: boolean }>(`/pages/${slug}`, {
         method: "PUT",
         body: { seo },
@@ -32,8 +49,10 @@ export async function saveSeo(slug: string, seo: PageSeo): Promise<ActionResult>
       }),
     );
 
-    revalidatePath(`/admin/pages/${slug}`);
-    return { ok: true, revalidated };
+    publish(slug);
+    // True because this deployment just cleared its own cache; whether the
+    // backend's webhook also fired is not what the author needs to know.
+    return { ok: true, revalidated: true };
   } catch (err) {
     return { ok: false, error: toMessage(err) };
   }
@@ -58,7 +77,7 @@ export async function saveSections(
   sections: PageSection[],
 ): Promise<ActionResult> {
   try {
-    const { revalidated } = await withToken((token) =>
+    await withToken((token) =>
       apiFetch<{ revalidated: boolean }>(`/pages/${slug}`, {
         method: "PUT",
         body: { sections },
@@ -66,8 +85,10 @@ export async function saveSections(
       }),
     );
 
-    revalidatePath(`/admin/pages/${slug}`);
-    return { ok: true, revalidated };
+    publish(slug);
+    // True because this deployment just cleared its own cache; whether the
+    // backend's webhook also fired is not what the author needs to know.
+    return { ok: true, revalidated: true };
   } catch (err) {
     return { ok: false, error: toMessage(err) };
   }
@@ -80,7 +101,7 @@ export async function saveSection(
   enabled: boolean,
 ): Promise<ActionResult> {
   try {
-    const { revalidated } = await withToken((token) =>
+    await withToken((token) =>
       apiFetch<{ revalidated: boolean }>(`/pages/${slug}/sections/${key}`, {
         method: "PATCH",
         body: { data, enabled },
@@ -88,8 +109,10 @@ export async function saveSection(
       }),
     );
 
-    revalidatePath(`/admin/pages/${slug}`);
-    return { ok: true, revalidated };
+    publish(slug);
+    // True because this deployment just cleared its own cache; whether the
+    // backend's webhook also fired is not what the author needs to know.
+    return { ok: true, revalidated: true };
   } catch (err) {
     return { ok: false, error: toMessage(err) };
   }

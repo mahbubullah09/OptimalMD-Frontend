@@ -1,5 +1,5 @@
-import { revalidatePath, revalidateTag } from "next/cache";
 import { type NextRequest, NextResponse } from "next/server";
+import { revalidateGlobals, revalidatePage } from "@/lib/revalidate";
 
 /**
  * Called by the backend after content changes so the affected static page is
@@ -29,26 +29,8 @@ export async function POST(req: NextRequest) {
     // No body is fine — fall back to the home page.
   }
 
-  // The navbar and footer appear on every page, so a change to either
-  // invalidates the whole site rather than one route. The backend sends "*".
-  if (slug === "*") {
-    revalidateTag("globals", { expire: 0 });
-    revalidatePath("/", "layout");
-    return NextResponse.json({ revalidated: true, path: "/", tag: "globals" });
-  }
-
-  const path = slug === "home" ? "/" : `/${slug}`;
-  const tag = `page:${slug}`;
-
-  // Both are needed. revalidatePath drops the rendered route, but the content
-  // fetch lives in the Data Cache under its own tag and would otherwise keep
-  // serving the previous payload until its TTL expires — so the page would
-  // re-render with stale content.
-  //
-  // Next 16 requires a cache-life profile on revalidateTag; `expire: 0` means
-  // treat the entry as stale immediately rather than after a grace period.
-  revalidateTag(tag, { expire: 0 });
-  revalidatePath(path);
+  // The backend sends "*" when the navbar or footer changed.
+  const { path, tag } = slug === "*" ? revalidateGlobals() : revalidatePage(slug);
 
   return NextResponse.json({ revalidated: true, path, tag });
 }
