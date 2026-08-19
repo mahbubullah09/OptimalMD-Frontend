@@ -4,6 +4,7 @@ import "../admin.css";
 import { getCurrentAdmin, getSessionToken } from "@/lib/adminSession";
 import { listPages } from "@/lib/content";
 import { ASSETS, ORG } from "@/lib/site";
+import AdminShell from "./AdminShell";
 import LogoutButton from "./LogoutButton";
 import SidebarNav, { type NavPage } from "./SidebarNav";
 
@@ -14,7 +15,11 @@ import SidebarNav, { type NavPage } from "./SidebarNav";
  * cookie exists, whereas /auth/me here verifies the token against the backend
  * and confirms the account is still active.
  */
-export default async function PortalLayout({ children }: { children: React.ReactNode }) {
+export default async function PortalLayout({
+  children,
+}: {
+  children: React.ReactNode;
+}) {
   const admin = await getCurrentAdmin();
 
   if (!admin) redirect("/admin/login");
@@ -24,7 +29,10 @@ export default async function PortalLayout({ children }: { children: React.React
   const token = await getSessionToken();
   let pages: NavPage[] = [];
   try {
-    pages = (await listPages(token ?? "")).map((p) => ({ slug: p.slug, name: p.name }));
+    pages = (await listPages(token ?? "")).map((p) => ({
+      slug: p.slug,
+      name: p.name,
+    }));
   } catch {
     pages = [];
   }
@@ -39,31 +47,33 @@ export default async function PortalLayout({ children }: { children: React.React
 
   return (
     <div className="adminRoot">
-      <div className="shell">
-        <aside className="sidebar">
-          <Link href="/admin" className="brand">
-            {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img className="brandLogo" src={ASSETS.logo} alt={ORG.name} />
-          </Link>
+      <AdminShell
+        sidebar={
+          <>
+            <Link href="/admin" className="brand">
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img className="brandLogo" src={ASSETS.logo} alt={ORG.name} />
+            </Link>
 
-          <SidebarNav pages={pages} />
+            <SidebarNav pages={pages} />
 
-          <div className="sidebarFoot">
-            <div className="who">
-              <span className="whoAvatar" aria-hidden>
-                {initials || "?"}
-              </span>
-              <span className="whoText">
-                <b>{admin.name}</b>
-                <span>{admin.email}</span>
-              </span>
+            <div className="sidebarFoot">
+              <div className="who">
+                <span className="whoAvatar" aria-hidden>
+                  {initials || "?"}
+                </span>
+                <span className="whoText">
+                  <b>{admin.name}</b>
+                  <span>{admin.email}</span>
+                </span>
+              </div>
+              <LogoutButton />
             </div>
-            <LogoutButton />
-          </div>
-        </aside>
-
-        <main className="main">{children}</main>
-      </div>
+          </>
+        }
+      >
+        {children}
+      </AdminShell>
     </div>
   );
 }

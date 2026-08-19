@@ -2365,6 +2365,7 @@
   display: flex;
   align-items: center;
   justify-content: space-between;
+  gap: 6px;
   padding: 0 8px 10px;
   color: var(--a-muted);
   font-size: 10.5px;
@@ -2780,4 +2781,161 @@
 .bPanelBody .input,
 .bPanelBody .textarea {
   max-width: 100%;
+}
+
+/* ============================================================
+   Collapsed navigation
+
+   The builder needs its width for the canvas, so the sidebar shrinks to an
+   icon rail there. Everything stays in place and reachable — only the labels
+   go — so nothing has to be relearned when it comes back.
+   ============================================================ */
+
+.shell {
+  transition: grid-template-columns 0.18s ease;
+}
+
+.shell.isRail {
+  grid-template-columns: 62px 1fr;
+}
+
+.shell.isRail .sidebar {
+  padding: 14px 8px 12px;
+  align-items: center;
+}
+
+.shell.isRail .brand {
+  padding: 2px 0 14px;
+}
+
+.shell.isRail .brandLogo {
+  height: 28px;
+}
+
+/* Labels, counts and the filter are what a rail cannot show; the icons that
+   identify each destination stay. */
+.shell.isRail .navLabel,
+.shell.isRail .navCount,
+.shell.isRail .navChevron,
+.shell.isRail .navFilter,
+.shell.isRail .navChildren,
+.shell.isRail .navEmpty,
+.shell.isRail .whoText,
+.shell.isRail .logoutButton span {
+  display: none;
+}
+
+.shell.isRail .navLink {
+  justify-content: center;
+  padding: 10px 0;
+  gap: 0;
+}
+
+.shell.isRail .navIcon {
+  margin: 0;
+}
+
+.shell.isRail .sidebarFoot {
+  align-items: center;
+}
+
+.shell.isRail .who {
+  justify-content: center;
+}
+
+.sidebarToggle {
+  display: grid;
+  place-items: center;
+  width: 26px;
+  height: 26px;
+  margin: 10px auto 0;
+  border: 1px solid rgba(255, 255, 255, 0.16);
+  border-radius: 7px;
+  background: none;
+  color: rgba(230, 238, 251, 0.7);
+  cursor: pointer;
+  transition: border-color 0.14s, color 0.14s;
+}
+
+.sidebarToggle:hover {
+  border-color: var(--a-accent);
+  color: #fff;
+}
+
+.sidebarToggle svg {
+  width: 14px;
+  height: 14px;
+  stroke: currentColor;
+  fill: none;
+}
+
+/* ---- layers, collapsed to a rail ---- */
+
+.bLayers.isRail {
+  padding: 12px 6px;
+  align-items: center;
+}
+
+.bLayers.isRail .bLayersHead span:first-child,
+.bLayers.isRail .bLayerName,
+.bLayers.isRail .bLayersHint {
+  display: none;
+}
+
+.bLayers.isRail .bLayer {
+  justify-content: center;
+  padding: 0;
+}
+
+/* A numbered chip stands in for the name, so the order is still readable. */
+.bLayerIndex {
+  display: none;
+  width: 24px;
+  height: 24px;
+  flex-shrink: 0;
+  border-radius: 7px;
+  background: var(--a-sunken);
+  color: var(--a-muted);
+  font-size: 11px;
+  font-weight: 700;
+  line-height: 24px;
+  text-align: center;
+}
+
+.bLayers.isRail .bLayerIndex {
+  display: block;
+}
+
+.bLayers.isRail .bLayer.isActive .bLayerIndex {
+  background: var(--a-accent);
+  color: #fff;
+}
+
+.bLayersToggle {
+  display: grid;
+  place-items: center;
+  width: 24px;
+  height: 24px;
+  border: 1px solid var(--a-border);
+  border-radius: 7px;
+  background: var(--a-surface);
+  color: var(--a-muted);
+  cursor: pointer;
+}
+
+.bLayersToggle:hover {
+  border-color: var(--a-accent);
+  color: var(--a-accent);
+}
+
+.bLayersToggle svg {
+  width: 13px;
+  height: 13px;
+  stroke: currentColor;
+  fill: none;
+}
+
+/* A chevron pointing back the way it came, for a collapse control. */
+.icnBack {
+  transform: rotate(180deg);
 }

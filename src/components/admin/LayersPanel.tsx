@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { type PageSection, SECTION_LABELS } from "@/lib/content.types";
+import { ChevronIcon } from "./icons";
 
 /**
  * The layers list: what is on this page, in the order it appears.
@@ -52,6 +53,8 @@ export default function LayersPanel({
   onHover,
   onToggle,
   onMove,
+  collapsed,
+  onToggleCollapsed,
 }: {
   sections: PageSection[];
   activeKey: string;
@@ -61,6 +64,8 @@ export default function LayersPanel({
   onHover: (key: string | null) => void;
   onToggle: (key: string, enabled: boolean) => void;
   onMove: (from: number, to: number) => void;
+  collapsed: boolean;
+  onToggleCollapsed: () => void;
 }) {
   const [dragging, setDragging] = useState<number | null>(null);
   const [dropAt, setDropAt] = useState<number | null>(null);
@@ -76,10 +81,23 @@ export default function LayersPanel({
   };
 
   return (
-    <aside className="bLayers" onMouseLeave={() => onHover(null)}>
+    <aside
+      className={`bLayers${collapsed ? " isRail" : ""}`}
+      onMouseLeave={() => onHover(null)}
+    >
       <div className="bLayersHead">
         <span>Layers</span>
-        <span className="bLayersCount">{sections.length}</span>
+        {collapsed ? null : <span className="bLayersCount">{sections.length}</span>}
+        <button
+          type="button"
+          className="bLayersToggle"
+          aria-label={collapsed ? "Expand layers" : "Collapse layers"}
+          aria-expanded={!collapsed}
+          title={collapsed ? "Expand layers" : "Collapse layers"}
+          onClick={onToggleCollapsed}
+        >
+          <ChevronIcon className={collapsed ? "" : "icnBack"} />
+        </button>
       </div>
 
       <ol className="bLayerList">
@@ -123,10 +141,17 @@ export default function LayersPanel({
                   <GripIcon />
                 </span>
 
+                {/* Stands in for the name when the panel is a rail, so the
+                    order is still readable at a glance. */}
+                <span className="bLayerIndex" aria-hidden>
+                  {index + 1}
+                </span>
+
                 <button
                   type="button"
                   className="bLayerName"
                   aria-current={isActive ? "true" : undefined}
+                  title={SECTION_LABELS[section.type] ?? section.type}
                   onClick={() => onSelect(section.key)}
                 >
                   {SECTION_LABELS[section.type] ?? section.type}

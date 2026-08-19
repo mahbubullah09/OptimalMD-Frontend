@@ -71,6 +71,7 @@ export default function PageWorkspace({ page }: { page: PageDocument }) {
   const [dirty, setDirty] = useState<Set<string>>(new Set());
   const [orderDirty, setOrderDirty] = useState(false);
   const [hoverKey, setHoverKey] = useState<string | null>(null);
+  const [layersRail, setLayersRail] = useState(false);
 
   /** Undo history. Only the section list is tracked; SEO has its own form. */
   const [past, setPast] = useState<PageSection[][]>([]);
@@ -81,6 +82,8 @@ export default function PageWorkspace({ page }: { page: PageDocument }) {
   const paneRef = useRef<HTMLElement>(null);
   const formRef = useRef<HTMLDivElement>(null);
   const [scale, setScale] = useState(1);
+  /** Frame height in CSS pixels, chosen so the canvas fills the pane. */
+  const [frameHeight, setFrameHeight] = useState(900);
   const [flash, setFlash] = useState(false);
 
   /* ---------------------------------------------------------------- */
@@ -367,7 +370,14 @@ export default function PageWorkspace({ page }: { page: PageDocument }) {
     const pane = paneRef.current;
     if (!pane) return;
 
-    const fit = () => setScale(Math.min(1, (pane.clientWidth - 64) / width));
+    const fit = () => {
+      const next = Math.min(1, (pane.clientWidth - 56) / width);
+      setScale(next);
+      // The frame is scaled, so to fill the pane vertically it has to be
+      // taller than the pane by the same factor. Without this it stayed a
+      // fixed 900px window showing a sliver of the page.
+      setFrameHeight(Math.max(560, Math.round((pane.clientHeight - 56) / next)));
+    };
     fit();
 
     const observer = new ResizeObserver(fit);
@@ -454,19 +464,24 @@ export default function PageWorkspace({ page }: { page: PageDocument }) {
             onHover={hoverSection}
             onToggle={toggleSection}
             onMove={moveSection}
+            collapsed={layersRail}
+            onToggleCollapsed={() => setLayersRail((v) => !v)}
           />
 
           <section className="bCanvas" ref={paneRef}>
-            <div className="bStageBox" style={{ width: width * scale, height: 900 * scale }}>
+            <div
+              className="bStageBox"
+              style={{ width: width * scale, height: frameHeight * scale }}
+            >
               <div
                 className="bStage"
-                style={{ transform: `scale(${scale})`, width, height: 900 }}
+                style={{ transform: `scale(${scale})`, width, height: frameHeight }}
               >
                 <iframe
                   ref={frameRef}
                   title="Page canvas"
                   src={`/admin/preview/${page.slug}`}
-                  style={{ width, height: 900 }}
+                  style={{ width, height: frameHeight }}
                   className="previewFrame"
                 />
               </div>
