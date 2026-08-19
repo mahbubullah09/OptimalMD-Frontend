@@ -1,5 +1,6 @@
 "use client";
 
+import { useRouter } from "next/navigation";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
   saveSection,
@@ -7,6 +8,7 @@ import {
   saveSeo,
 } from "@/app/admin/(portal)/pages/[slug]/actions";
 import {
+  PREVIEW_CHROME,
   PREVIEW_HOVER,
   PREVIEW_MESSAGE,
   PREVIEW_SELECT,
@@ -52,6 +54,8 @@ type DeviceKey = keyof typeof DEVICES;
 const HISTORY_LIMIT = 50;
 
 export default function PageWorkspace({ page }: { page: PageDocument }) {
+  const router = useRouter();
+
   const ordered = useMemo(
     () => [...page.sections].sort((a, b) => a.order - b.order),
     [page.sections],
@@ -106,6 +110,7 @@ export default function PageWorkspace({ page }: { page: PageDocument }) {
         type?: string;
         key?: string | null;
         field?: string | null;
+        part?: string | null;
       } | null;
       if (!data) return;
 
@@ -128,12 +133,29 @@ export default function PageWorkspace({ page }: { page: PageDocument }) {
       }
 
       // Pointer moving inside the canvas lights up the matching layer.
-      if (data.type === PREVIEW_HOVER) setHoverKey(data.key ?? null);
+      if (data.type === PREVIEW_HOVER) {
+        setHoverKey(data.key ?? null);
+        return;
+      }
+
+      // The navbar and footer are shown for context but belong to no page, so
+      // a click on them offers the editor that does own them rather than
+      // silently doing nothing.
+      if (data.type === PREVIEW_CHROME) {
+        const part = data.part === "footer" ? "footer" : "navigation";
+        if (
+          window.confirm(
+            `The ${part} is shared by every page. Open Navigation & footer to edit it?`,
+          )
+        ) {
+          router.push("/admin/site");
+        }
+      }
     }
 
     window.addEventListener("message", onMessage);
     return () => window.removeEventListener("message", onMessage);
-  }, [sections, activeKey, pushToPreview]);
+  }, [sections, activeKey, pushToPreview, router]);
 
   /* ---------------------------------------------------------------- */
   /* editing                                                           */

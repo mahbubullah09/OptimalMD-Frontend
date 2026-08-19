@@ -1,9 +1,12 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import Footer from "@/components/layout/Footer/Footer";
+import Navbar from "@/components/layout/Navbar/Navbar";
 import { renderSection } from "@/components/sections/SectionList";
 import type { PageSection } from "@/lib/content.types";
 import { SECTION_LABELS } from "@/lib/content.types";
+import type { FooterData, NavData } from "@/lib/globals.types";
 
 /**
  * The canvas: real marketing sections rendered from draft data.
@@ -19,6 +22,12 @@ import { SECTION_LABELS } from "@/lib/content.types";
  * highlights the matching section here, which is the same relationship read
  * from the other direction.
  *
+ * The navbar and footer are drawn around the page too, because a section is
+ * only ever seen with them there — judging spacing or a dark heading without
+ * the header above it means judging something the visitor never sees. They
+ * belong to no page though, so they take no part in selection; clicking one
+ * offers to open the editor that does own them.
+ *
  * Only same-origin messages are trusted; the editor and this frame are served
  * by the same app.
  */
@@ -27,6 +36,8 @@ export const PREVIEW_MESSAGE = "omd-preview-sections";
 export const PREVIEW_SELECT = "omd-preview-select";
 /** Sent up as the pointer moves between sections. */
 export const PREVIEW_HOVER = "omd-preview-hover";
+/** Sent up when the shared navbar or footer is clicked. */
+export const PREVIEW_CHROME = "omd-preview-chrome";
 
 type Incoming = {
   type?: string;
@@ -36,7 +47,15 @@ type Incoming = {
   hover?: string | null;
 };
 
-export default function PreviewCanvas({ initial }: { initial: PageSection[] }) {
+export default function PreviewCanvas({
+  initial,
+  nav,
+  footer,
+}: {
+  initial: PageSection[];
+  nav: NavData;
+  footer: FooterData;
+}) {
   const [sections, setSections] = useState<PageSection[]>(initial);
   const [selected, setSelected] = useState<string | null>(null);
   const [hover, setHover] = useState<string | null>(null);
@@ -79,6 +98,23 @@ export default function PreviewCanvas({ initial }: { initial: PageSection[] }) {
         ?.getAttribute("data-preview-key") ?? null;
 
     function onClick(event: MouseEvent) {
+      const chrome = (event.target as HTMLElement | null)?.closest?.(
+        "[data-preview-chrome]",
+      );
+      if (chrome) {
+        // Not part of this page, so selecting it here would be a lie; the
+        // parent decides whether to send the author to the chrome editor.
+        event.preventDefault();
+        window.parent.postMessage(
+          {
+            type: PREVIEW_CHROME,
+            part: chrome.getAttribute("data-preview-chrome"),
+          },
+          window.location.origin,
+        );
+        return;
+      }
+
       const key = keyOf(event.target);
       if (!key) return;
 
@@ -132,27 +168,48 @@ export default function PreviewCanvas({ initial }: { initial: PageSection[] }) {
     .sort((a, b) => a.order - b.order);
 
   return (
-    <main className="site-main">
-      {visible.map((section) => {
-        const state = [
-          "previewSection",
-          selected === section.key ? "isSelected" : "",
-          hover === section.key ? "isHovered" : "",
-        ]
-          .filter(Boolean)
-          .join(" ");
+    <div className="previewPage">
+      {/* Shown but not selectable: it is the same chrome on every page. */}
+      <div className="previewChromeBand" data-preview-chrome="nav">
+        <Navbar data={nav} />
+        <span className="previewChromeTag">
+          Navigation · edited in Navigation &amp; footer
+        </span>
+      </div>
 
-        return (
-          <div key={section.key} data-preview-key={section.key} className={state}>
-            {/* Names the thing you are about to select, the way a canvas
+      <main className="site-main">
+        {visible.map((section) => {
+          const state = [
+            "previewSection",
+            selected === section.key ? "isSelected" : "",
+            hover === section.key ? "isHovered" : "",
+          ]
+            .filter(Boolean)
+            .join(" ");
+
+          return (
+            <div
+              key={section.key}
+              data-preview-key={section.key}
+              className={state}
+            >
+              {/* Names the thing you are about to select, the way a canvas
                 does — otherwise an outline appears with no explanation. */}
-            <span className="previewTag">
-              {SECTION_LABELS[section.type] ?? section.type}
-            </span>
-            {renderSection(section)}
-          </div>
-        );
-      })}
-    </main>
+              <span className="previewTag">
+                {SECTION_LABELS[section.type] ?? section.type}
+              </span>
+              {renderSection(section)}
+            </div>
+          );
+        })}
+      </main>
+
+      <div className="previewChromeBand" data-preview-chrome="footer">
+        <Footer data={footer} />
+        <span className="previewChromeTag">
+          Footer · edited in Navigation &amp; footer
+        </span>
+      </div>
+    </div>
   );
 }

@@ -87,3 +87,61 @@ body {
   font-size: 14px;
   letter-spacing: 0.02em;
 }
+
+/* The shared navbar and footer, drawn around the page being edited.
+
+   They are shown because a section is only ever seen with them there, but
+   they belong to no page — so they are dimmed slightly until pointed at, and
+   never take the selection outline a section gets. */
+.previewPage {
+  display: flex;
+  flex-direction: column;
+  min-height: 100vh;
+}
+
+.previewPage > .site-main {
+  flex: 1;
+}
+
+.previewChromeBand {
+  position: relative;
+  cursor: pointer;
+}
+
+.previewChromeBand::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  border: 2px dashed transparent;
+  background: rgba(11, 37, 69, 0.28);
+  transition: background 0.15s, border-color 0.15s;
+}
+
+/* Dimmed until hovered, so the page itself stays the thing in focus. */
+.previewChromeBand:hover::after {
+  background: transparent;
+  border-color: rgba(148, 163, 184, 0.8);
+}
+
+.previewChromeTag {
+  position: absolute;
+  top: 0;
+  left: 0;
+  z-index: 4;
+  padding: 3px 9px;
+  border-radius: 0 0 7px 0;
+  background: #475569;
+  color: #fff;
+  font-family: system-ui, sans-serif;
+  font-size: 11px;
+  font-weight: 700;
+  white-space: nowrap;
+  pointer-events: none;
+  opacity: 0;
+  transition: opacity 0.12s;
+}
+
+.previewChromeBand:hover .previewChromeTag {
+  opacity: 1;
+}
