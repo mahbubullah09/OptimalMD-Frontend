@@ -771,6 +771,8 @@
   display: flex;
   flex-direction: column;
   height: 100vh;
+  /* Each pane scrolls on its own; the page itself never does. */
+  overflow: hidden;
 }
 
 /* Reads as a toolbar rather than as more page content: it stays put while the
@@ -850,7 +852,9 @@
 
 .wsBody {
   display: grid;
-  grid-template-columns: 430px 1fr;
+  /* minmax(0, …) for the same reason as the page builder: a plain 1fr takes
+     its minimum from the frame's true device width and overflows the page. */
+  grid-template-columns: 430px minmax(0, 1fr);
   flex: 1;
   min-height: 0;
 }
@@ -1058,9 +1062,16 @@
   overflow: auto;
   min-width: 0;
   display: flex;
-  justify-content: center;
+  /* Auto margin rather than justify-content, so a frame wider than the pane
+     stays reachable from both sides — see .bCanvas. */
+  justify-content: flex-start;
   align-items: flex-start;
   padding: 20px;
+}
+
+.wsPreview > * {
+  margin: 0 auto;
+  flex-shrink: 0;
 }
 
 .wsPreviewStage {
@@ -2227,6 +2238,8 @@
   flex-direction: column;
   height: 100vh;
   background: var(--a-sunken);
+  /* Nothing inside may push the page sideways; each pane scrolls on its own. */
+  overflow: hidden;
 }
 
 /* ---- top bar ---- */
@@ -2325,9 +2338,16 @@
 /* ---- three panes ---- */
 .bBody {
   display: grid;
-  grid-template-columns: 232px 1fr 384px;
+  /*
+   * minmax(0, 1fr), not 1fr. A 1fr track is minmax(auto, 1fr), and that auto
+   * minimum is the canvas's content width — the frame at its true device size.
+   * The track then grew past its share, pushing the inspector off the screen
+   * and taking the whole builder into horizontal scroll with it.
+   */
+  grid-template-columns: 216px minmax(0, 1fr) 360px;
   flex: 1;
   min-height: 0;
+  min-width: 0;
 }
 
 /* ---- layers ---- */
@@ -2500,7 +2520,13 @@
   min-width: 0;
   overflow: auto;
   display: flex;
-  justify-content: center;
+  /*
+   * Centred with an auto margin on the child rather than justify-content.
+   * Centring a flex item that is wider than its scroll container spills it
+   * equally both ways, and the overflow on the start side cannot be scrolled
+   * to — so a zoomed-in canvas loses its left edge behind the layers panel.
+   */
+  justify-content: flex-start;
   align-items: flex-start;
   padding: 24px;
   /* A workbench, not a page: the frame has to read as an object sitting on
@@ -2513,6 +2539,7 @@
 
 .bStageBox {
   flex-shrink: 0;
+  margin: 0 auto;
 }
 
 .bStage {
@@ -2603,7 +2630,7 @@
 /* ---- narrow screens ---- */
 @media (max-width: 1280px) {
   .bBody {
-    grid-template-columns: 200px 1fr 340px;
+    grid-template-columns: 196px minmax(0, 1fr) 330px;
   }
 }
 
